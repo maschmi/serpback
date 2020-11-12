@@ -1,0 +1,15 @@
+databaseChangeLog:
+- changeSet:
+    id: 0000000000000-1
+    author: martin (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: init_PK
+            name: init_id
+            type: INT
+        tableName: intitable

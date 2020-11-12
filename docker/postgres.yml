@@ -1,0 +1,20 @@
+# Use postgres/example user/password credentials
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres:13.0-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: serpant
+      POSTGRES_PASSWORD: serpent_dev
+      POSTGRES_DB: serp
+    ports:
+      - 6432:5432
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 9080:8080
