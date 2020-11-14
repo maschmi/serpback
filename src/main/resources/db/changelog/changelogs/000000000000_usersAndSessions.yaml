@@ -1,0 +1,10 @@
+databaseChangeLog:
+- changeSet:
+    id: 0000000000000-1
+    author: martin (generated)
+    changes:
+    - sqlFile:
+        comment: Creates Session Tabel for Spring Session
+        dbms: 'postgresql'
+        path: '../scripts/spring-session-table.sql'
+        relativeToChangelogFile: true
