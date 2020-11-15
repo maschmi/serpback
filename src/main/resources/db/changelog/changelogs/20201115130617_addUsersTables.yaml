@@ -1,0 +1,104 @@
+databaseChangeLog:
+- changeSet:
+    id: 1605441979846-1
+    author: martin (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+            name: user_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: authority_id
+            type: BIGINT
+        tableName: user_authorites_map
+- changeSet:
+    id: 1605441979846-2
+    author: martin (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: user_authoritiesPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: authority
+            type: VARCHAR(50)
+        tableName: user_authorities
+- changeSet:
+    id: 1605441979846-3
+    author: martin (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: usersPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: enabled
+            type: BOOLEAN
+        - column:
+            constraints:
+              nullable: false
+            name: password
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: username
+            type: VARCHAR(255)
+        tableName: users
+- changeSet:
+    id: 1605441979846-4
+    author: martin (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: username
+        constraintName: UC_USERSUSERNAME_COL
+        tableName: users
+- changeSet:
+    id: 1605441979846-5
+    author: martin (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: authority_id
+        baseTableName: user_authorites_map
+        constraintName: FKjy3wexi79alogl9heq5qnyhh2
+        deferrable: false
+        initiallyDeferred: false
+        referencedColumnNames: id
+        referencedTableName: user_authorities
+        validate: true
+- changeSet:
+    id: 1605441979846-6
+    author: martin (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: user_authorites_map
+        constraintName: FKlai67k13146q8knyu0uepykob
+        deferrable: false
+        initiallyDeferred: false
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+
+

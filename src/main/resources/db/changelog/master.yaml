@@ -1,4 +1,7 @@
 databaseChangeLog:
   - include:
-      file: 'changelogs/000000000000_usersAndSessions.yaml'
-      relativeToChangelogFile: true
+     file: 'changelogs/00000000000000_createSessionTables.yaml'
+     relativeToChangelogFile: true
+  - include:
+     file: 'changelogs/20201115130617_addUsersTables.yaml'
+     relativeToChangelogFile: true
