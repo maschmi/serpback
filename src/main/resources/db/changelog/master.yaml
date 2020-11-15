@@ -1,4 +1,4 @@
 databaseChangeLog:
-  - includeAll:
-      path: changelogs
+  - include:
+      file: 'changelogs/000000000000_usersAndSessions.yaml'
       relativeToChangelogFile: true
