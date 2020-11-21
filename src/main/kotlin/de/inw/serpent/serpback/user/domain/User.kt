@@ -6,12 +6,22 @@ import javax.persistence.*
 
 @Entity
 @Table(name = "users", indexes = [
-    Index(name = "idx_usr_name", columnList = "username")
+    Index(name = "idx_usr_login", columnList = "login"),
+    Index(name = "idx_usr_email", columnList = "email")
 ])
 class User(
 
+    @Column(nullable = false, unique = false, name = "first_name")
+    var firstName: String? = null,
+
+    @Column(nullable = false, unique = false, name = "last_name")
+    var lastName: String? = null,
+
     @Column(nullable = false, unique = true)
-    var username: String? = null,
+    var login: String? = null,
+
+    @Column(nullable = false, unique = true)
+    var email: String? = null,
 
     @Column(nullable = false)
     var password: String? = null,

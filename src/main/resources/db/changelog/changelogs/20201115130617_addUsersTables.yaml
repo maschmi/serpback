@@ -63,7 +63,22 @@ databaseChangeLog:
         - column:
             constraints:
               nullable: false
-            name: username
+            name: login
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: first_name
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: last_name
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: email
             type: VARCHAR(255)
         tableName: users
 - changeSet:
@@ -71,9 +86,17 @@ databaseChangeLog:
     author: martin (generated)
     changes:
     - addUniqueConstraint:
-        columnNames: username
-        constraintName: UC_USERSUSERNAME_COL
+        columnNames: login
+        constraintName: UC_USERS_LOGIN
         tableName: users
+- changeSet:
+      id: 1605441979846-4-1
+      author: martin (generated)
+      changes:
+      - addUniqueConstraint:
+          columnNames: email
+          constraintName: UC_USERS_EMAIL
+          tableName: users
 - changeSet:
     id: 1605441979846-5
     author: martin (generated)
@@ -100,5 +123,26 @@ databaseChangeLog:
         referencedColumnNames: id
         referencedTableName: users
         validate: true
-
+- changeSet:
+    id: 1605441979846-7
+    author: martin
+    changes:
+    - createIndex:
+        columns:
+        - column:
+           name: login
+        indexName: idx_usr_login
+        tableName: users
+        unique: true
+- changeSet:
+      id: 1605441979846-8
+      author: martin
+      changes:
+      - createIndex:
+          columns:
+          - column:
+             name: email
+          indexName: idx_usr_email
+          tableName: users
+          unique: true
 
