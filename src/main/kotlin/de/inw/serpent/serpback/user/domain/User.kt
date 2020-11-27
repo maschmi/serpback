@@ -27,7 +27,7 @@ class User(
     var password: String? = null,
 
     @Column(nullable = false)
-    var enabled: Boolean? = true,
+    var enabled: Boolean? = false,
 
     @ManyToMany()
     @JoinTable(
