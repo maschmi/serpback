@@ -56,6 +56,24 @@ class UserService(private val userRepository: UserRepository,
         cal.add(Calendar.MINUTE, REGISTRATION_EXPIRATION_IN_MIN)
         return cal.time
     }
+
+    fun confirmRegistration(token: String): ErrorResult<Boolean, UserServiceError> {
+        val registrationToken = registrationTokenRepository.findByToken(token)
+            ?: return ErrorResult(UserServiceError.USER_ALREADY_CONFIRMED, false)
+        val isStillValid = registrationToken.expirationDate.after(Date.from(Calendar.getInstance().toInstant()))
+        if (isStillValid) {
+            activateUser(registrationToken.user)
+            registrationTokenRepository.delete(registrationToken)
+            return ErrorResult(true, true)
+        } else {
+            return ErrorResult(UserServiceError.CONFIRMATION_TIMEOUT, false)
+        }
+    }
+
+    private fun activateUser(user: User) {
+        user.enabled = true
+        userRepository.save(user)
+    }
 }
 
 

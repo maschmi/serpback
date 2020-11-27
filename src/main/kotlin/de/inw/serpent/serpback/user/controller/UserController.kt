@@ -1,6 +1,7 @@
 package de.inw.serpent.serpback.user.controller
 
 import de.inw.serpent.serpback.user.controller.exception.InvalidUserRegistrationException
+import de.inw.serpent.serpback.user.controller.exception.UserConfirmationException
 import de.inw.serpent.serpback.user.controller.exception.UserRegistrationException
 import de.inw.serpent.serpback.user.dto.AccountDto
 import de.inw.serpent.serpback.user.dto.UserDto
@@ -15,6 +16,15 @@ import javax.validation.Valid
 @RestController
 @RequestMapping("api/user")
 class UserController(val userService: UserService) {
+
+    @GetMapping("/register/{token}")
+    fun confirmRegistration(@PathVariable token: String): ResponseEntity<Boolean> {
+        val result = userService.confirmRegistration(token)
+        if(result.isError) {
+            throw UserConfirmationException(result.errorOrNull<UserServiceError>() ?: UserServiceError.UNKNOWN_ERROR)
+        }
+        return ResponseEntity.ok(result.getOrNull<Boolean>() ?: false)
+    }
 
     @PostMapping("/register")
     fun registerUser(@Valid @RequestBody account: AccountDto): ResponseEntity<UserDto> {

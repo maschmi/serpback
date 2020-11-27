@@ -25,7 +25,7 @@ class Security(private val userDetailsService: UserDetailsService) : WebSecurity
         http
             .csrf().disable()
             .authorizeRequests()
-                .antMatchers("/", "/api/login", "/api/logout", "/api/user/register").permitAll()
+                .antMatchers("/", "/api/login", "/api/logout", "/api/user/register/*").permitAll()
                 .and()
             .authorizeRequests()
                 .anyRequest()

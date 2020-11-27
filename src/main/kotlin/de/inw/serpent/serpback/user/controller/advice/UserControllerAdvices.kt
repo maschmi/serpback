@@ -1,6 +1,7 @@
 package de.inw.serpent.serpback.user.controller.advice
 
 import de.inw.serpent.serpback.user.controller.exception.InvalidUserRegistrationException
+import de.inw.serpent.serpback.user.controller.exception.UserConfirmationException
 import de.inw.serpent.serpback.user.controller.exception.UserRegistrationException
 import de.inw.serpent.serpback.user.service.UserServiceError
 import org.springframework.http.HttpStatus
@@ -18,6 +19,16 @@ class UserControllerAdvices {
         return when (exception.reason) {
             UserServiceError.EMAIL_ALREADY_REGISTERED -> ResponseEntity.badRequest().body(exception.reason.toString())
             UserServiceError.LOGIN_ALREADY_REGISTERED -> ResponseEntity.badRequest().body(exception.reason.toString())
+            else -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.reason.toString())
+        }
+
+    }
+
+    @ExceptionHandler()
+    fun userNotConfirmed(exception: UserConfirmationException): ResponseEntity<String> {
+        return when (exception.reason) {
+            UserServiceError.USER_ALREADY_CONFIRMED -> ResponseEntity.badRequest().body(exception.reason.toString())
+            UserServiceError.CONFIRMATION_TIMEOUT -> ResponseEntity.badRequest().body(exception.reason.toString())
             else -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.reason.toString())
         }
 
