@@ -1,10 +1,10 @@
 databaseChangeLog:
   - include:
-     file: 'changelogs/00000000000000_createSessionTables.yaml'
-     relativeToChangelogFile: true
-  - include:
      file: 'changelogs/20201115130617_addUsersTables.yaml'
      relativeToChangelogFile: true
   - include:
      file: 'changelogs/20201127170626_updateUserInfoAndRegistrations.yaml'
+     relativeToChangelogFile: true
+  - include:
+     file: 'changelogs/20201206160250_createSessionTables.yaml'
      relativeToChangelogFile: true

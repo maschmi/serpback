@@ -24,7 +24,7 @@ class UserWebSecurityConfig(
          http
             .csrf().disable()
             .authorizeRequests()
-            .antMatchers("/api/user/login", "/api/user/logout", "/api/user/register", "/api/user/register**")
+            .antMatchers("/api/user/login", "/api/user/logout", "/api/user/register", "/api/user/register/**")
             .permitAll()
             .anyRequest().authenticated()
             .and()

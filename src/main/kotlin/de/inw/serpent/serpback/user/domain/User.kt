@@ -9,6 +9,9 @@ import javax.persistence.*
 @Table(name = "users", indexes = [
     Index(name = "idx_usr_login", columnList = "login"),
     Index(name = "idx_usr_email", columnList = "email")
+], uniqueConstraints = [
+    UniqueConstraint(name ="uc_user_login", columnNames = ["login"]),
+    UniqueConstraint(name ="uc_user_email", columnNames = ["email"])
 ])
 class User(
 
