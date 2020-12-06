@@ -12,9 +12,11 @@ import de.inw.serpent.serpback.user.dto.UserDto
 import de.inw.serpent.serpback.user.events.UserRegisteredEvent
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.*
+import javax.transaction.Transactional
 
 @Service
 class UserService(private val userRepository: UserRepository,
@@ -51,6 +53,15 @@ class UserService(private val userRepository: UserRepository,
         eventPublisher.publishEvent(UserRegisteredEvent(this, userEntity.id, savedEntity.token))
     }
 
+    @Scheduled(cron = "0 0 * * * *")
+    @Transactional
+    protected fun removeStaleRegistrationTokens() {
+        registrationTokenRepository
+            .findAll()
+            .filter { registrationToken ->  !isRegistrationTokenValid(registrationToken)}
+            .forEach { token -> registrationTokenRepository.delete(token) }
+    }
+
     private fun calculateExpiryDate(): Date {
         val cal = Calendar.getInstance()
         cal.add(Calendar.MINUTE, REGISTRATION_EXPIRATION_IN_MIN)
@@ -60,8 +71,7 @@ class UserService(private val userRepository: UserRepository,
     fun confirmRegistration(token: String): ErrorResult<Boolean, UserServiceError> {
         val registrationToken = registrationTokenRepository.findByToken(token)
             ?: return ErrorResult(UserServiceError.USER_ALREADY_CONFIRMED, false)
-        val isStillValid = registrationToken.expirationDate.after(Date.from(Calendar.getInstance().toInstant()))
-        if (isStillValid) {
+        if(isRegistrationTokenValid(registrationToken)) {
             activateUser(registrationToken.user)
             registrationTokenRepository.delete(registrationToken)
             return ErrorResult(true, true)
@@ -69,6 +79,9 @@ class UserService(private val userRepository: UserRepository,
             return ErrorResult(UserServiceError.CONFIRMATION_TIMEOUT, false)
         }
     }
+
+    private fun isRegistrationTokenValid(registrationToken: RegistrationToken) =
+        registrationToken.expirationDate.after(Date.from(Calendar.getInstance().toInstant()))
 
     private fun activateUser(user: User) {
         user.enabled = true
