@@ -15,6 +15,7 @@ import org.springframework.security.authentication.LockedException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.core.Authentication
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import java.lang.StringBuilder
@@ -53,12 +54,12 @@ class UserController(val userService: UserService, val authManagerBuilder: Authe
 
     @PostMapping("/login")
     fun loginUser(@Valid @RequestBody user: UserLoginRequest): ResponseEntity<UserLoginResponse> {
-        // https://www.innoq.com/en/blog/cookie-based-spring-security-session/
         val authToken = UsernamePasswordAuthenticationToken(user.username, user.password)
         val authUser = authenticateUser(authToken, user)
 
         if (authUser?.isAuthenticated ?: false) {
             val principal = authUser?.principal as UserPrincipal
+            SecurityContextHolder.getContext().authentication = authUser
             return ResponseEntity.ok(UserLoginResponse(principal.username))
         }
 

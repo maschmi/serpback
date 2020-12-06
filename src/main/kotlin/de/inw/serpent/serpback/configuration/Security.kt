@@ -25,20 +25,12 @@ class Security(private val userDetailsService: UserDetailsService,
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
         http
-            .csrf().disable()
-            .authorizeRequests()
-                .antMatchers("/", "/api/user/login", "/api/user/logout", "/api/user/register", "/api/user/register**").permitAll()
-                .and()
             .authorizeRequests()
                 .anyRequest()
                 .authenticated()
             .and()
-            .httpBasic().disable()
+            .httpBasic()
+            .disable()
     }
 
-    @Autowired
-    fun initialize(auth: AuthenticationManagerBuilder) {
-        auth.userDetailsService(userDetailsService)
-        auth.authenticationProvider(authProvider)
-    }
 }

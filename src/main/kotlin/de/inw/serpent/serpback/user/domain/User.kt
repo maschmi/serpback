@@ -1,6 +1,7 @@
 package de.inw.serpent.serpback.user.domain
 
 import de.inw.serpent.serpback.domain.EntityWithId
+import java.io.Serializable
 import javax.persistence.*
 
 

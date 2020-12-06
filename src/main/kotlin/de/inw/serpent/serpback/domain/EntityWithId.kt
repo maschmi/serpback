@@ -1,10 +1,11 @@
 package de.inw.serpent.serpback.domain
 
 import org.springframework.data.util.ProxyUtils
+import java.io.Serializable
 import javax.persistence.*
 
 @MappedSuperclass
-abstract class EntityWithId {
+abstract class EntityWithId : Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @SequenceGenerator(name = "id_generator", sequenceName = "id_seq", allocationSize = 1)

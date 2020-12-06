@@ -1,4 +1,4 @@
-package de.inw.serpent.serpback.configuration
+package de.inw.serpent.serpback.user.config
 
 import de.inw.serpent.serpback.user.service.UserDetailsService
 import org.springframework.context.annotation.Bean
