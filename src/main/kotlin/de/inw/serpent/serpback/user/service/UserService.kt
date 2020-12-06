@@ -7,7 +7,7 @@ import de.inw.serpent.serpback.user.domain.RegistrationToken
 import de.inw.serpent.serpback.user.domain.User
 import de.inw.serpent.serpback.user.domain.mapToDto
 import de.inw.serpent.serpback.user.domain.mapToEntity
-import de.inw.serpent.serpback.user.dto.AccountDto
+import de.inw.serpent.serpback.user.dto.AccountInput
 import de.inw.serpent.serpback.user.dto.UserDto
 import de.inw.serpent.serpback.user.events.UserRegisteredEvent
 import org.slf4j.LoggerFactory
@@ -25,7 +25,7 @@ class UserService(private val userRepository: UserRepository,
     private val REGISTRATION_EXPIRATION_IN_MIN = 60*24
     private val log = LoggerFactory.getLogger(UserService::class.java)
 
-    fun registerUser(account: AccountDto): ErrorResult<UserDto, UserServiceError> {
+    fun registerUser(account: AccountInput): ErrorResult<UserDto, UserServiceError> {
         log.debug("Registering new user {}.", account.login)
         if (userRepository.findByLogin(account.login) != null) {
             return ErrorResult.failure(UserServiceError.LOGIN_ALREADY_REGISTERED)

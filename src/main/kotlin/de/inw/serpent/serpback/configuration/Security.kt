@@ -1,7 +1,9 @@
 package de.inw.serpent.serpback.configuration
 
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -16,24 +18,27 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager
 
 @Configuration
 @EnableWebSecurity
-class Security(private val userDetailsService: UserDetailsService) : WebSecurityConfigurerAdapter() {
-
-
+class Security(private val userDetailsService: UserDetailsService,
+                private val authProvider: DaoAuthenticationProvider)
+    : WebSecurityConfigurerAdapter() {
 
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
         http
             .csrf().disable()
             .authorizeRequests()
-                .antMatchers("/", "/api/login", "/api/logout", "/api/user/register/*").permitAll()
+                .antMatchers("/", "/api/user/login", "/api/user/logout", "/api/user/register", "/api/user/register**").permitAll()
                 .and()
             .authorizeRequests()
                 .anyRequest()
                 .authenticated()
+            .and()
+            .httpBasic().disable()
     }
 
-    @Throws(Exception::class)
-    override fun configure(auth: AuthenticationManagerBuilder) {
+    @Autowired
+    fun initialize(auth: AuthenticationManagerBuilder) {
         auth.userDetailsService(userDetailsService)
+        auth.authenticationProvider(authProvider)
     }
 }

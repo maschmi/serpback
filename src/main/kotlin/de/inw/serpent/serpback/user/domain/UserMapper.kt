@@ -1,13 +1,13 @@
 package de.inw.serpent.serpback.user.domain
 
-import de.inw.serpent.serpback.user.dto.AccountDto
+import de.inw.serpent.serpback.user.dto.AccountInput
 import de.inw.serpent.serpback.user.dto.UserDto
 import org.springframework.security.crypto.password.PasswordEncoder
 import kotlin.collections.List as List
 
-fun AccountDto.mapToEntity(passwordEncoder: PasswordEncoder,
-    isEnabled: Boolean = false,
-    authorities: List<UserAuthorities> = ArrayList()
+fun AccountInput.mapToEntity(passwordEncoder: PasswordEncoder,
+                             isEnabled: Boolean = false,
+                             authorities: List<UserAuthorities> = ArrayList()
 ) : User {
     return User(
         this.firstName,

@@ -63,6 +63,7 @@ dependencies {
 	liquibaseRuntime("org.postgresql:postgresql")
 	liquibaseRuntime("ch.qos.logback:logback-core:1.2.3")
 	liquibaseRuntime("ch.qos.logback:logback-classic:1.2.3")
+	liquibaseRuntime("org.yaml:snakeyaml:1.24")
 	liquibaseRuntime(sourceSets["main"].output)
 }
 
