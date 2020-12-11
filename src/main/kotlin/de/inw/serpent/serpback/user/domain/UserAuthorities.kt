@@ -10,7 +10,12 @@ class UserAuthorities(
     @Column(length = 50, nullable = false)
     var authority: String?,
 
-    @ManyToMany(mappedBy = "authorities")
+    @ManyToMany
+    @JoinTable(
+        name = "user_authorites_map",
+        inverseJoinColumns = [ JoinColumn(name = "user_id", referencedColumnName = "id") ],
+        joinColumns = [ JoinColumn(name = "authority_id", referencedColumnName = "id")]
+    )
     var users: Set<User>
 
 ) : EntityWithId()

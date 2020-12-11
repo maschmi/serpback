@@ -19,6 +19,7 @@ import java.util.*
 import javax.transaction.Transactional
 
 @Service
+@Transactional
 class UserService(private val userRepository: UserRepository,
                   private val registrationTokenRepository: RegistrationTokenRepository,
                   private val passwordEncoder: PasswordEncoder,
@@ -54,7 +55,6 @@ class UserService(private val userRepository: UserRepository,
     }
 
     @Scheduled(cron = "0 0 * * * *")
-    @Transactional
     protected fun removeStaleRegistrationTokens() {
         registrationTokenRepository
             .findAll()

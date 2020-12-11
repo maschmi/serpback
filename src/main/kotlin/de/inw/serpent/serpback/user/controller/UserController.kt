@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import java.lang.StringBuilder
 import javax.validation.Valid
+import javax.validation.constraints.Email
 
 @RestController
 @RequestMapping("api/user")
@@ -57,8 +58,8 @@ class UserController(val userService: UserService, val authManagerBuilder: Authe
         val authToken = UsernamePasswordAuthenticationToken(user.username, user.password)
         val authUser = authenticateUser(authToken, user)
 
-        if (authUser?.isAuthenticated ?: false) {
-            val principal = authUser?.principal as UserPrincipal
+        if (authUser?.isAuthenticated == true) {
+            val principal = authUser.principal as UserPrincipal
             SecurityContextHolder.getContext().authentication = authUser
             return ResponseEntity.ok(UserLoginResponse(principal.username))
         }
@@ -82,24 +83,18 @@ class UserController(val userService: UserService, val authManagerBuilder: Authe
     }
 
     private fun validateUserValues(account: AccountInput): Boolean {
-        val sb = StringBuilder()
+        val invalidFields = ArrayList<String>()
         if (account.email.isBlank()) {
-            sb.append("email ")
-        }
-        if (account.firstName.isBlank()) {
-            sb.append("firstName ")
-        }
-        if (account.lastName.isBlank()) {
-            sb.append("lastName ")
+            invalidFields.add("email")
         }
         if (account.password.isBlank()) {
-            sb.append("password ")
+            invalidFields.add("password")
         }
         if (account.login.isBlank() || account.login.length <= 3) {
-            sb.append("login ")
+            invalidFields.add("login")
         }
-        val invalidFields = sb.toString()
-        if (invalidFields.isBlank()) {
+
+        if (invalidFields.isEmpty()) {
             return true
         }
 

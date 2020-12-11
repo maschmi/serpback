@@ -9,6 +9,7 @@ import de.inw.serpent.serpback.user.service.UserServiceError
 import de.inw.serpent.serpback.user.service.exception.UserNotEnabledException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -50,11 +51,11 @@ class UserControllerAdvices {
     @ExceptionHandler()
     fun invalidUserRegistration(exception: InvalidUserRegistrationException): ResponseEntity<String> {
         val headers = HttpHeaders()
-        headers.add("errorcode", exception.message.toString())
-        headers.add("details", exception.invalidFields)
+        headers.add("errorcode", UserControllerError.INVALID_DATA.toString() )
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .headers(headers)
-            .body("Invalid: " + exception.invalidFields)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body("{ \"invalidfields\": ["+ exception.invalidFields.joinToString(",") +"]}")
     }
 
     @ExceptionHandler()

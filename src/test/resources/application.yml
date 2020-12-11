@@ -1,12 +1,12 @@
 spring:
   profiles:
-    active: dev
+    active: test
   cache:
     type: none
   datasource:
     url: jdbc:postgresql://localhost:6432/serp
-    username: serpant
-    password: serpent_dev
+    username: testuser
+    password: secret
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/master.yaml
@@ -20,3 +20,6 @@ spring:
       ddl-auto: validate
   session:
     store-type: jdbc
+
+featuretoggle:
+  test: enable
