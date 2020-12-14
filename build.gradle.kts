@@ -5,10 +5,12 @@ import java.time.format.DateTimeFormatter
 plugins {
 	id("org.springframework.boot") version "2.3.5.RELEASE"
 	id("io.spring.dependency-management") version "1.0.10.RELEASE"
-	id("org.liquibase.gradle") version "2.0.3"
-	kotlin("jvm") version "1.3.72"
-	kotlin("plugin.spring") version "1.3.72"
-	kotlin("plugin.jpa") version "1.3.72"
+	id("org.liquibase.gradle") version "2.0.4"
+	kotlin("jvm") version "1.4.10"
+	kotlin("plugin.spring") version "1.4.10"
+	id("org.jetbrains.kotlin.plugin.jpa") version "1.4.10"
+	id("org.sonarqube") version "3.0"
+	jacoco
 }
 
 group = "de.inw.serpent"
@@ -76,6 +78,16 @@ tasks.withType<KotlinCompile> {
 	kotlinOptions {
 		freeCompilerArgs = listOf("-Xjsr305=strict")
 		jvmTarget = "11"
+	}
+}
+
+tasks.test {
+	finalizedBy(tasks.jacocoTestReport) // report is always generated after tests run
+}
+tasks.jacocoTestReport {
+	dependsOn(tasks.test) // tests are required to run before generating the report
+	reports {
+		xml.isEnabled = true
 	}
 }
 
