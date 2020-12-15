@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.event.EventListener
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -66,10 +67,7 @@ class UserUATests : AbstractContainerDatabaseTest() {
                 "            \"email\":  \"\",\n" +
                 "            \"login\": \"\"\n" +
                 "        }"
-        sut.post("/api/user/register") {
-            contentType = MediaType.APPLICATION_JSON
-            content = payload
-        }
+        performRegistrationRequest(payload)
             .andExpect {
                 status { isBadRequest }
                 content { contentType(MediaType.APPLICATION_JSON)}
@@ -99,10 +97,7 @@ class UserUATests : AbstractContainerDatabaseTest() {
                 "            \"login\": \"test\"\n" +
                 "        }"
 
-        sut.post("/api/user/register") {
-            contentType = MediaType.APPLICATION_JSON
-            content = payload
-        }
+        performRegistrationRequest(payload)
             .andExpect {
                 status { isCreated }
                 content { contentType(MediaType.APPLICATION_JSON)}
@@ -110,6 +105,11 @@ class UserUATests : AbstractContainerDatabaseTest() {
             }
         assertThat(tokenStore.store).isNotEmpty
         assertThat(tokenStore.store[1]).isNotEmpty
+    }
+
+    private fun performRegistrationRequest(payload: String) = sut.post("/api/user/register") {
+        contentType = MediaType.APPLICATION_JSON
+        content = payload
     }
 
     @Test
@@ -208,16 +208,29 @@ class UserUATests : AbstractContainerDatabaseTest() {
 
     @Test
     @Order(10)
-    fun getAdminEchoService_WhenUserIsAdmin_ReturnsEcho() {
-        addUserToAdminGroup("test")
+    fun deleteUser_WhenUserIsNoAdmin_ReturnsForbidden() {
         val expectedBody = UUID.randomUUID().toString()
         val cookies = extractCookiesFromLoginResponse()
-        sut.get("/api/echo/admin/$expectedBody"){
+        sut.delete("/api/user/delete/$expectedBody") {
+            cookie(*cookies)
+        }
+            .andExpect {
+                status { isForbidden }
+            }
+    }
+
+    @Test
+    @Order(11)
+    fun getAdminEchoService_WhenUserIsAdmin_ReturnsEcho() {
+        addUserToAdminGroup("test")
+        val someUserName = UUID.randomUUID().toString()
+        val cookies = extractCookiesFromLoginResponse()
+        sut.get("/api/echo/admin/$someUserName"){
             cookie(*cookies)
         }
             .andExpect {
                 status { isOk }
-                contains(expectedBody)
+                contains(someUserName)
             }
     }
 
@@ -231,8 +244,36 @@ class UserUATests : AbstractContainerDatabaseTest() {
     }
 
     @Test
-    @Order(11)
-    fun userLogout_userLogsOut_ReturnsOk_AndEchoServiceIsNoLongerAccesible() {
+    @Transactional
+    @Order(12)
+    fun deleteUser_WhenUserIsAdmin_ReturnsNoContentAndDeletesUser() {
+        val userLogin = "deltest"
+        val newUserToRegister = "{\n" +
+                "            \"firstName\":  \"fn\",\n" +
+                "            \"lastName\":  \"ln\",\n" +
+                "            \"password\":  \"mytopsecret\",\n" +
+                "            \"email\":  \"test1@test1\",\n" +
+                "            \"login\": \"$userLogin\"\n" +
+                "        }"
+        performRegistrationRequest(newUserToRegister)
+        addUserToAdminGroup(userLogin)
+        assertThat(userRepo.findByLogin(userLogin)).isNotNull
+
+        val cookies = extractCookiesFromLoginResponse()
+        sut.delete("/api/user/delete/$userLogin") {
+            cookie(*cookies)
+        }
+            .andExpect {
+                status { isNoContent }
+            }
+
+        assertThat(userRepo.findByLogin(userLogin)).isNull()
+        assertThat(userRepo.findByLogin("test")?.authorities?.map { u -> u.authority }).contains("ROLE_ADMIN")
+    }
+
+    @Test
+    @Order(13)
+    fun userLogout_userLogsOut_ReturnsOk_AndEchoServiceIsNoLongerAccessible() {
         val expectedBody = UUID.randomUUID().toString()
 
         sut.get("/api/user/logout")
@@ -248,7 +289,7 @@ class UserUATests : AbstractContainerDatabaseTest() {
     }
 
     @Test
-    @Order(12)
+    @Order(13)
     fun userLogin_userLogsInWithEmail_Succeeds() {
         val payload = getValidEmailLoginPayload()
         performLogin(payload)

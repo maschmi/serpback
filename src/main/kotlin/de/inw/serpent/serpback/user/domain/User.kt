@@ -33,7 +33,7 @@ class User(
     @Column(nullable = false)
     var enabled: Boolean? = false,
 
-    @ManyToMany()
+    @ManyToMany(cascade = [CascadeType.REMOVE])
     @JoinTable(
         name = "user_authorites_map",
         joinColumns = [ JoinColumn(name = "user_id", referencedColumnName = "id") ],

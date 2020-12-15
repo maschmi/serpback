@@ -4,10 +4,12 @@ import de.inw.serpent.serpback.user.controller.exception.UserConfirmationExcepti
 import de.inw.serpent.serpback.user.controller.exception.UserRegistrationException
 import de.inw.serpent.serpback.user.dto.*
 import de.inw.serpent.serpback.user.service.UserLoginService
+import de.inw.serpent.serpback.user.service.UserManagementService
 import de.inw.serpent.serpback.user.service.UserRegistrationService
 import de.inw.serpent.serpback.user.service.UserServiceError
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.annotation.Secured
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import javax.validation.Valid
@@ -15,7 +17,8 @@ import javax.validation.Valid
 @RestController
 @RequestMapping("api/user")
 class UserController(val userRegistrationService: UserRegistrationService,
-                     val userLoginService: UserLoginService
+                     val userLoginService: UserLoginService,
+                     val userManagementService: UserManagementService
                      ) {
 
     @GetMapping("/register/{token}")
@@ -41,7 +44,6 @@ class UserController(val userRegistrationService: UserRegistrationService,
                 .path("/{userlogin}").buildAndExpand(newUser.login)
                 .toUri()
             return ResponseEntity.created(createdUri).body(newUser)
-
     }
 
     @PostMapping("/login")
@@ -53,6 +55,16 @@ class UserController(val userRegistrationService: UserRegistrationService,
 
         return ResponseEntity.ok().body(loginResult.getOrNull<UserLoginResponse>())
     }
+
+    @Secured("ROLE_ADMIN")
+    @DeleteMapping("/delete/{login}")
+    fun deleteUser(@PathVariable login: String): ResponseEntity<Nothing> {
+        if( userManagementService.tryDeleteUser(login)) {
+            return ResponseEntity.noContent().build()
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+    }
+
 
 
 }

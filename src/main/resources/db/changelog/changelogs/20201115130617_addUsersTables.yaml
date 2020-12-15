@@ -110,6 +110,7 @@ databaseChangeLog:
         referencedColumnNames: id
         referencedTableName: user_authorities
         validate: true
+        onDelete: 'SET NULL'
 - changeSet:
     id: 1605441979846-6
     author: martin (generated)
@@ -123,6 +124,7 @@ databaseChangeLog:
         referencedColumnNames: id
         referencedTableName: users
         validate: true
+        onDelete: CASCADE
 - changeSet:
     id: 1605441979846-7
     author: martin
