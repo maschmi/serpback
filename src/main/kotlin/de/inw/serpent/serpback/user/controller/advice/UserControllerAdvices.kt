@@ -2,7 +2,7 @@ package de.inw.serpent.serpback.user.controller.advice
 
 import de.inw.serpent.serpback.user.controller.UserBadCredentialsException
 import de.inw.serpent.serpback.user.controller.UserControllerError
-import de.inw.serpent.serpback.user.controller.exception.InvalidUserRegistrationException
+import de.inw.serpent.serpback.user.service.exception.InvalidUserRegistrationException
 import de.inw.serpent.serpback.user.controller.exception.UserConfirmationException
 import de.inw.serpent.serpback.user.controller.exception.UserRegistrationException
 import de.inw.serpent.serpback.user.service.UserServiceError
@@ -13,8 +13,6 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
-import org.springframework.web.bind.annotation.ResponseStatus
-import org.springframework.web.server.ResponseStatusException
 
 @ControllerAdvice
 class UserControllerAdvices {

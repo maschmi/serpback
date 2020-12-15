@@ -3,6 +3,7 @@ package de.inw.serpent.serpback.user.service
 import de.inw.serpent.serpback.type.ErrorResult
 import de.inw.serpent.serpback.user.RegistrationTokenRepository
 import de.inw.serpent.serpback.user.UserRepository
+import de.inw.serpent.serpback.user.service.exception.InvalidUserRegistrationException
 import de.inw.serpent.serpback.user.domain.RegistrationToken
 import de.inw.serpent.serpback.user.domain.User
 import de.inw.serpent.serpback.user.domain.mapToDto
@@ -20,16 +21,18 @@ import javax.transaction.Transactional
 
 @Service
 @Transactional
-class UserService(private val userRepository: UserRepository,
-                  private val registrationTokenRepository: RegistrationTokenRepository,
-                  private val passwordEncoder: PasswordEncoder,
-                  private val eventPublisher: ApplicationEventPublisher) {
+class UserRegistrationService(private val userRepository: UserRepository,
+                              private val registrationTokenRepository: RegistrationTokenRepository,
+                              private val passwordEncoder: PasswordEncoder,
+                              private val eventPublisher: ApplicationEventPublisher) {
 
     private val REGISTRATION_EXPIRATION_IN_MIN = 60*24
-    private val log = LoggerFactory.getLogger(UserService::class.java)
+    private val log = LoggerFactory.getLogger(UserRegistrationService::class.java)
 
     fun registerUser(account: AccountInput): ErrorResult<UserDto, UserServiceError> {
         log.debug("Registering new user {}.", account.login)
+        validateUserValues(account)
+
         if (userRepository.findByLogin(account.login) != null) {
             return ErrorResult.failure(UserServiceError.LOGIN_ALREADY_REGISTERED)
         }
@@ -43,15 +46,6 @@ class UserService(private val userRepository: UserRepository,
 
         addRegistrationToken(userEntity)
         return ErrorResult.success(userEntity.mapToDto())
-    }
-
-    fun getUserloginFromEmail(email: String): ErrorResult<String, UserServiceError> {
-        val login = userRepository.findByEmail(email)?.login
-        if (login != null) {
-            return ErrorResult.success(login)
-        }
-
-        return ErrorResult.failure(UserServiceError.UNKNOWN_ERROR)
     }
 
     private fun addRegistrationToken(userEntity: User) {
@@ -95,6 +89,25 @@ class UserService(private val userRepository: UserRepository,
     private fun activateUser(user: User) {
         user.enabled = true
         userRepository.save(user)
+    }
+
+    private fun validateUserValues(account: AccountInput) {
+        val invalidFields = ArrayList<String>()
+        if (account.email.isBlank()) {
+            invalidFields.add("email")
+        }
+        if (account.password.isBlank()) {
+            invalidFields.add("password")
+        }
+        if (account.login.isBlank() || account.login.length <= 3) {
+            invalidFields.add("login")
+        }
+
+        if (invalidFields.isEmpty()) {
+            return
+        }
+
+        throw InvalidUserRegistrationException(invalidFields)
     }
 
 }
