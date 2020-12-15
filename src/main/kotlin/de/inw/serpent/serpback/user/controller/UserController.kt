@@ -18,9 +18,7 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder
-import java.lang.StringBuilder
 import javax.validation.Valid
-import javax.validation.constraints.Email
 
 @RestController
 @RequestMapping("api/user")
@@ -55,9 +53,22 @@ class UserController(val userService: UserService, val authManagerBuilder: Authe
 
     @PostMapping("/login")
     fun loginUser(@Valid @RequestBody user: UserLoginRequest): ResponseEntity<UserLoginResponse> {
-        val authToken = UsernamePasswordAuthenticationToken(user.username, user.password)
-        val authUser = authenticateUser(authToken, user)
 
+        return try {
+            val authToken = UsernamePasswordAuthenticationToken(user.username, user.password)
+            val authUser = authenticateUser(authToken, user)
+            processAuthentication(authUser)
+        } catch(badCredentials: UserBadCredentialsException) {
+            val userLogin = userService.getUserloginFromEmail(user.username)
+                .getOrNull<String>() ?: throw badCredentials
+
+            val authToken = UsernamePasswordAuthenticationToken(userLogin, user.password)
+            val authUser = authenticateUser(authToken, user)
+            return processAuthentication(authUser)
+        }
+    }
+
+    private fun processAuthentication(authUser: Authentication?): ResponseEntity<UserLoginResponse> {
         if (authUser?.isAuthenticated == true) {
             val principal = authUser.principal as UserPrincipal
             SecurityContextHolder.getContext().authentication = authUser

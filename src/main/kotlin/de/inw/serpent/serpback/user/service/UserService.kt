@@ -45,6 +45,15 @@ class UserService(private val userRepository: UserRepository,
         return ErrorResult.success(userEntity.mapToDto())
     }
 
+    fun getUserloginFromEmail(email: String): ErrorResult<String, UserServiceError> {
+        val login = userRepository.findByEmail(email)?.login
+        if (login != null) {
+            return ErrorResult.success(login)
+        }
+
+        return ErrorResult.failure(UserServiceError.UNKNOWN_ERROR)
+    }
+
     private fun addRegistrationToken(userEntity: User) {
         val token = UUID.randomUUID().toString()
         val expiryDate = calculateExpiryDate()
@@ -87,6 +96,7 @@ class UserService(private val userRepository: UserRepository,
         user.enabled = true
         userRepository.save(user)
     }
+
 }
 
 

@@ -247,6 +247,23 @@ class UserUATests : AbstractContainerDatabaseTest() {
             }
     }
 
+    @Test
+    @Order(12)
+    fun userLogin_userLogsInWithEmail_Succeeds() {
+        val payload = getValidEmailLoginPayload()
+        performLogin(payload)
+            .andExpect {
+                status { isOk  }
+                content { contentType(MediaType.APPLICATION_JSON)}
+                jsonPath("$.login", `is`("test") )
+            }
+    }
+
+    private fun getValidEmailLoginPayload() = "{\n" +
+            "  \"username\": \"test@test\",\n" +
+            "  \"password\": \"mytopsecret\"\n" +
+            "}"
+
 
     @EventListener
     fun userRegistrationListener(event: UserRegisteredEvent) {
