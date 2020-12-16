@@ -7,6 +7,7 @@ import de.inw.serpent.serpback.user.domain.PasswordResetToken
 import de.inw.serpent.serpback.user.domain.User
 import de.inw.serpent.serpback.user.domain.mapToUserCreatedResponse
 import de.inw.serpent.serpback.user.dto.UserCreatedResponse
+import de.inw.serpent.serpback.user.dto.UserCreationRequest
 import de.inw.serpent.serpback.user.dto.UserRegistrationRequest
 import de.inw.serpent.serpback.user.events.PasswordResetEvent
 import org.slf4j.LoggerFactory
@@ -20,7 +21,6 @@ import javax.transaction.Transactional
 @Service
 @Transactional
 class UserManagementService(private val userRepository: UserRepository,
-                            private val userAuthoritiesRepository: UserAuthoritiesRepository,
                             private val resetTokenRepository: PasswordResetTokenRepository,
                             private val passwordEncoder: PasswordEncoder,
                             private val eventPublisher: ApplicationEventPublisher
@@ -47,7 +47,7 @@ class UserManagementService(private val userRepository: UserRepository,
         }
     }
 
-    fun finishResetPassword(token: String, password: String) {
+    fun passwordResetFinish(token: String, password: String) {
         val user = resetTokenRepository
             .findByToken(token)?.user
             ?: return
@@ -62,20 +62,6 @@ class UserManagementService(private val userRepository: UserRepository,
         return true
     }
 
-    fun createUser(user: UserRegistrationRequest, authorities: List<String>): UserCreatedResponse {
-        val userEntity = User(
-            user.firstName,
-            user.lastName,
-            user.login,
-            user.email,
-            passwordEncoder.encode(UUID.randomUUID().toString()),
-            true,
-            authorities.mapNotNull { a -> userAuthoritiesRepository.findByAuthority(a) }
-        )
-        val savedUser = userRepository.save(userEntity)
-        passwordResetInit(user.login)
-        return savedUser.mapToUserCreatedResponse()
-    }
 
     private fun createResetToken(userEntity: User) {
         val token = UUID.randomUUID().toString()

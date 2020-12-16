@@ -2,6 +2,7 @@ package de.inw.serpent.serpback.user.service
 
 import de.inw.serpent.serpback.type.ErrorResult
 import de.inw.serpent.serpback.user.RegistrationTokenRepository
+import de.inw.serpent.serpback.user.UserAuthoritiesRepository
 import de.inw.serpent.serpback.user.UserRepository
 import de.inw.serpent.serpback.user.service.exception.InvalidUserRegistrationException
 import de.inw.serpent.serpback.user.domain.RegistrationToken
@@ -10,7 +11,7 @@ import de.inw.serpent.serpback.user.domain.mapToUserCreatedResponse
 import de.inw.serpent.serpback.user.domain.mapToEntity
 import de.inw.serpent.serpback.user.dto.AccountInput
 import de.inw.serpent.serpback.user.dto.UserCreatedResponse
-import de.inw.serpent.serpback.user.dto.UserRegistrationRequest
+import de.inw.serpent.serpback.user.dto.UserCreationRequest
 import de.inw.serpent.serpback.user.events.UserRegisteredEvent
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
@@ -22,17 +23,61 @@ import javax.transaction.Transactional
 
 @Service
 @Transactional
-class UserRegistrationService(private val userRepository: UserRepository,
-                              private val registrationTokenRepository: RegistrationTokenRepository,
-                              private val passwordEncoder: PasswordEncoder,
-                              private val eventPublisher: ApplicationEventPublisher) {
+class UserCreationService(private val userRepository: UserRepository,
+                          private val registrationTokenRepository: RegistrationTokenRepository,
+                          private val userAuthoritiesRepository: UserAuthoritiesRepository,
+                          private val userManagementService: UserManagementService,
+                          private val passwordEncoder: PasswordEncoder,
+                          private val eventPublisher: ApplicationEventPublisher) {
 
     private val REGISTRATION_EXPIRATION_IN_MIN = 60*24
-    private val log = LoggerFactory.getLogger(UserRegistrationService::class.java)
+    private val log = LoggerFactory.getLogger(UserCreationService::class.java)
+
+    fun createUser(user: UserCreationRequest): ErrorResult<UserCreatedResponse, UserServiceError> {
+        validateRequest(user)
+
+        if (userRepository.findByLogin(user.login) != null) {
+            return ErrorResult.failure(UserServiceError.LOGIN_ALREADY_REGISTERED)
+        }
+
+        if (userRepository.findByEmail(user.email) != null) {
+            return ErrorResult.failure(UserServiceError.EMAIL_ALREADY_REGISTERED)
+        }
+
+        val userEntity = User(
+            user.firstName,
+            user.lastName,
+            user.login,
+            user.email,
+            passwordEncoder.encode(UUID.randomUUID().toString()),
+            true,
+            user.roles.mapNotNull { a -> userAuthoritiesRepository.findByAuthority(a) }
+        )
+        val savedUser = userRepository.save(userEntity)
+        userManagementService.passwordResetInit(user.login)
+        return ErrorResult.success(savedUser.mapToUserCreatedResponse())
+    }
+
+    private fun validateRequest(user: UserCreationRequest) {
+        val invalidFields = ArrayList<String>()
+        if (user.email.isBlank()) {
+            invalidFields.add("email")
+        }
+
+        if (user.login.isBlank() || user.login.length <= 3) {
+            invalidFields.add("login")
+        }
+
+        if (invalidFields.isEmpty()) {
+            return
+        }
+
+        throw InvalidUserRegistrationException(invalidFields)
+    }
 
     fun registerUser(account: AccountInput): ErrorResult<UserCreatedResponse, UserServiceError> {
         log.debug("Registering new user {}.", account.login)
-        validateUserValues(account)
+        validateAccountValues(account)
 
         if (userRepository.findByLogin(account.login) != null) {
             return ErrorResult.failure(UserServiceError.LOGIN_ALREADY_REGISTERED)
@@ -92,7 +137,7 @@ class UserRegistrationService(private val userRepository: UserRepository,
         userRepository.save(user)
     }
 
-    private fun validateUserValues(account: AccountInput) {
+    private fun validateAccountValues(account: AccountInput) {
         val invalidFields = ArrayList<String>()
         if (account.email.isBlank()) {
             invalidFields.add("email")

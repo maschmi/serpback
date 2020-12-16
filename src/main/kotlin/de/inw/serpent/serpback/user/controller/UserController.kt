@@ -1,11 +1,12 @@
 package de.inw.serpent.serpback.user.controller
 
+import de.inw.serpent.serpback.type.ErrorResult
 import de.inw.serpent.serpback.user.controller.exception.UserConfirmationException
 import de.inw.serpent.serpback.user.controller.exception.UserRegistrationException
 import de.inw.serpent.serpback.user.dto.*
 import de.inw.serpent.serpback.user.service.UserLoginService
 import de.inw.serpent.serpback.user.service.UserManagementService
-import de.inw.serpent.serpback.user.service.UserRegistrationService
+import de.inw.serpent.serpback.user.service.UserCreationService
 import de.inw.serpent.serpback.user.service.UserServiceError
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,14 +17,14 @@ import javax.validation.Valid
 
 @RestController
 @RequestMapping("api/user")
-class UserController(val userRegistrationService: UserRegistrationService,
+class UserController(val userCreationService: UserCreationService,
                      val userLoginService: UserLoginService,
                      val userManagementService: UserManagementService
                      ) {
 
     @GetMapping("/register/{token}")
     fun confirmRegistration(@PathVariable token: String): ResponseEntity<Boolean> {
-        val result = userRegistrationService.confirmRegistration(token)
+        val result = userCreationService.confirmRegistration(token)
         if(result.isError) {
             throw UserConfirmationException(result.errorOrNull<UserServiceError>() ?: UserServiceError.UNKNOWN_ERROR)
         }
@@ -32,18 +33,8 @@ class UserController(val userRegistrationService: UserRegistrationService,
 
     @PostMapping("/register")
     fun registerUser(@Valid @RequestBody account: AccountInput): ResponseEntity<UserCreatedResponse> {
-
-            val newUserResult = userRegistrationService.registerUser(account)
-            if (newUserResult.isError) {
-                throw UserRegistrationException(newUserResult.errorOrNull<UserServiceError>() ?: UserServiceError.UNKNOWN_ERROR)
-            }
-            val newUser = newUserResult.getOrNull<UserCreatedResponse>() ?: throw UserRegistrationException(UserServiceError.UNKNOWN_ERROR)
-            val createdUri = ServletUriComponentsBuilder
-                .fromCurrentRequestUri()
-                .replacePath("/api/user")
-                .path("/{userlogin}").buildAndExpand(newUser.login)
-                .toUri()
-            return ResponseEntity.created(createdUri).body(newUser)
+        val newUserResult = userCreationService.registerUser(account)
+        return processCreationResult(newUserResult)
     }
 
     @PostMapping("/login")
@@ -65,10 +56,31 @@ class UserController(val userRegistrationService: UserRegistrationService,
     @PostMapping("/reset/finish/{token}")
     fun passwordResetFinish(@PathVariable token: String,
         @Valid @RequestBody request: UserPasswordResetFinishRequest): ResponseEntity<Nothing> {
-        userManagementService.finishResetPassword(token, request.password)
+        userManagementService.passwordResetFinish(token, request.password)
         return ResponseEntity.ok().build()
     }
 
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/create")
+    fun createUser(@Valid @RequestBody request: UserCreationRequest): ResponseEntity<UserCreatedResponse> {
+        val newUserResult = userCreationService.createUser(request)
+        return processCreationResult(newUserResult)
+    }
+
+    private fun processCreationResult(newUserResult: ErrorResult<UserCreatedResponse, UserServiceError>): ResponseEntity<UserCreatedResponse> {
+        if (newUserResult.isError) {
+            throw UserRegistrationException(newUserResult.errorOrNull<UserServiceError>()
+                ?: UserServiceError.UNKNOWN_ERROR)
+        }
+        val newUser = newUserResult.getOrNull<UserCreatedResponse>()
+            ?: throw UserRegistrationException(UserServiceError.UNKNOWN_ERROR)
+        val createdUri = ServletUriComponentsBuilder
+            .fromCurrentRequestUri()
+            .replacePath("/api/user")
+            .path("/{userlogin}").buildAndExpand(newUser.login)
+            .toUri()
+        return ResponseEntity.created(createdUri).body(newUser)
+    }
 
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/delete/{login}")
