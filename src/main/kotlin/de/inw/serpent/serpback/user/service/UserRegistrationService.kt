@@ -6,10 +6,11 @@ import de.inw.serpent.serpback.user.UserRepository
 import de.inw.serpent.serpback.user.service.exception.InvalidUserRegistrationException
 import de.inw.serpent.serpback.user.domain.RegistrationToken
 import de.inw.serpent.serpback.user.domain.User
-import de.inw.serpent.serpback.user.domain.mapToDto
+import de.inw.serpent.serpback.user.domain.mapToUserCreatedResponse
 import de.inw.serpent.serpback.user.domain.mapToEntity
 import de.inw.serpent.serpback.user.dto.AccountInput
-import de.inw.serpent.serpback.user.dto.UserDto
+import de.inw.serpent.serpback.user.dto.UserCreatedResponse
+import de.inw.serpent.serpback.user.dto.UserRegistrationRequest
 import de.inw.serpent.serpback.user.events.UserRegisteredEvent
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
@@ -29,7 +30,7 @@ class UserRegistrationService(private val userRepository: UserRepository,
     private val REGISTRATION_EXPIRATION_IN_MIN = 60*24
     private val log = LoggerFactory.getLogger(UserRegistrationService::class.java)
 
-    fun registerUser(account: AccountInput): ErrorResult<UserDto, UserServiceError> {
+    fun registerUser(account: AccountInput): ErrorResult<UserCreatedResponse, UserServiceError> {
         log.debug("Registering new user {}.", account.login)
         validateUserValues(account)
 
@@ -45,7 +46,7 @@ class UserRegistrationService(private val userRepository: UserRepository,
             .save(account.mapToEntity(passwordEncoder, false))
 
         addRegistrationToken(userEntity)
-        return ErrorResult.success(userEntity.mapToDto())
+        return ErrorResult.success(userEntity.mapToUserCreatedResponse())
     }
 
     private fun addRegistrationToken(userEntity: User) {

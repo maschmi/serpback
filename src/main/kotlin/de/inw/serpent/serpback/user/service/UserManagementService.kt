@@ -5,8 +5,9 @@ import de.inw.serpent.serpback.user.UserAuthoritiesRepository
 import de.inw.serpent.serpback.user.UserRepository
 import de.inw.serpent.serpback.user.domain.PasswordResetToken
 import de.inw.serpent.serpback.user.domain.User
-import de.inw.serpent.serpback.user.domain.mapToDto
-import de.inw.serpent.serpback.user.dto.UserDto
+import de.inw.serpent.serpback.user.domain.mapToUserCreatedResponse
+import de.inw.serpent.serpback.user.dto.UserCreatedResponse
+import de.inw.serpent.serpback.user.dto.UserRegistrationRequest
 import de.inw.serpent.serpback.user.events.PasswordResetEvent
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
@@ -61,7 +62,7 @@ class UserManagementService(private val userRepository: UserRepository,
         return true
     }
 
-    fun createUser(user: UserDto, authorities: List<String>): UserDto {
+    fun createUser(user: UserRegistrationRequest, authorities: List<String>): UserCreatedResponse {
         val userEntity = User(
             user.firstName,
             user.lastName,
@@ -73,7 +74,7 @@ class UserManagementService(private val userRepository: UserRepository,
         )
         val savedUser = userRepository.save(userEntity)
         passwordResetInit(user.login)
-        return savedUser.mapToDto()
+        return savedUser.mapToUserCreatedResponse()
     }
 
     private fun createResetToken(userEntity: User) {

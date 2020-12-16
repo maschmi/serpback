@@ -31,13 +31,13 @@ class UserController(val userRegistrationService: UserRegistrationService,
     }
 
     @PostMapping("/register")
-    fun registerUser(@Valid @RequestBody account: AccountInput): ResponseEntity<UserDto> {
+    fun registerUser(@Valid @RequestBody account: AccountInput): ResponseEntity<UserCreatedResponse> {
 
             val newUserResult = userRegistrationService.registerUser(account)
             if (newUserResult.isError) {
                 throw UserRegistrationException(newUserResult.errorOrNull<UserServiceError>() ?: UserServiceError.UNKNOWN_ERROR)
             }
-            val newUser = newUserResult.getOrNull<UserDto>() ?: throw UserRegistrationException(UserServiceError.UNKNOWN_ERROR)
+            val newUser = newUserResult.getOrNull<UserCreatedResponse>() ?: throw UserRegistrationException(UserServiceError.UNKNOWN_ERROR)
             val createdUri = ServletUriComponentsBuilder
                 .fromCurrentRequestUri()
                 .replacePath("/api/user")
@@ -68,6 +68,7 @@ class UserController(val userRegistrationService: UserRegistrationService,
         userManagementService.finishResetPassword(token, request.password)
         return ResponseEntity.ok().build()
     }
+
 
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/delete/{login}")
