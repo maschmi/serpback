@@ -3,6 +3,8 @@ package de.inw.serpent.serpback.user.service
 import de.inw.serpent.serpback.type.ErrorResult
 import de.inw.serpent.serpback.user.UserRepository
 import de.inw.serpent.serpback.user.controller.UserBadCredentialsException
+import de.inw.serpent.serpback.user.domain.PasswordResetToken
+import de.inw.serpent.serpback.user.domain.RegistrationToken
 import de.inw.serpent.serpback.user.dto.UserLoginResponse
 import de.inw.serpent.serpback.user.dto.UserPrincipal
 import de.inw.serpent.serpback.user.service.exception.UserNotEnabledException
@@ -14,6 +16,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
+import java.util.*
 
 @Service
 class UserLoginService(
@@ -68,4 +71,5 @@ class UserLoginService(
 
         return ErrorResult.failure(UserServiceError.UNKNOWN_ERROR)
     }
+
 }
