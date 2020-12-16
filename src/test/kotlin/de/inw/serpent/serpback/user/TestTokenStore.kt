@@ -1,19 +1,26 @@
 package de.inw.serpent.serpback.user
 
-import de.inw.serpent.serpback.user.service.IRegistrationNotifier
+import de.inw.serpent.serpback.user.events.PasswordResetEvent
+import de.inw.serpent.serpback.user.service.RegistrationNotifier
 
 
 import de.inw.serpent.serpback.user.events.UserRegisteredEvent
+import de.inw.serpent.serpback.user.service.PasswordResetNotifier
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 @Component
 @ConditionalOnProperty("featuretoggle.test")
-class TestTokenStore : IRegistrationNotifier {
+class TestTokenStore : RegistrationNotifier, PasswordResetNotifier {
 
-    val store = HashMap<Long, String>()
+    val registrationStore = HashMap<Long, String>()
+    val resetStore = HashMap<Long, String>()
 
     override fun onRegistration(event: UserRegisteredEvent) {
-        store[event.id ?: -1] = event.token
+        registrationStore[event.id ?: -1] = event.token
+    }
+
+    override fun onPasswordResetStart(event: PasswordResetEvent) {
+        resetStore[event.id ?: -1] = event.token
     }
 }

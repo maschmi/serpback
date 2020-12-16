@@ -5,7 +5,6 @@ import de.inw.serpent.serpback.container.AbstractContainerDatabaseTest
 import de.inw.serpent.serpback.user.controller.UserControllerError
 import de.inw.serpent.serpback.user.domain.User
 import de.inw.serpent.serpback.user.domain.UserAuthorities
-import de.inw.serpent.serpback.user.events.UserRegisteredEvent
 import de.inw.serpent.serpback.user.service.UserServiceError
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.*
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.TestMethodOrder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.context.event.EventListener
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
@@ -76,7 +74,7 @@ class UserUATests : AbstractContainerDatabaseTest() {
                 jsonPath("$.invalidfields", hasItem("email"))
                 jsonPath("$.invalidfields", hasItem("login"))
             }
-        assertThat(tokenStore.store).isEmpty()
+        assertThat(tokenStore.registrationStore).isEmpty()
     }
 
 
@@ -103,8 +101,8 @@ class UserUATests : AbstractContainerDatabaseTest() {
                 content { contentType(MediaType.APPLICATION_JSON)}
                 content { json(expectedResult) }
             }
-        assertThat(tokenStore.store).isNotEmpty
-        assertThat(tokenStore.store[1]).isNotEmpty
+        assertThat(tokenStore.registrationStore).isNotEmpty
+        assertThat(tokenStore.registrationStore[1]).isNotEmpty
     }
 
     private fun performRegistrationRequest(payload: String) = sut.post("/api/user/register") {
@@ -141,7 +139,7 @@ class UserUATests : AbstractContainerDatabaseTest() {
     @Order(6)
     fun activatesNewUser_CorrectToken_ReturnsOK() {
         val uid = getUidForLogin("test")
-        val token = tokenStore.store[uid] ?: throw AssertionError("Token for uid $uid not found")
+        val token = tokenStore.registrationStore[uid] ?: throw AssertionError("Token for uid $uid not found")
 
         sut.get("/api/user/register/$token")
             .andExpect {
@@ -289,7 +287,7 @@ class UserUATests : AbstractContainerDatabaseTest() {
     }
 
     @Test
-    @Order(13)
+    @Order(14)
     fun userLogin_userLogsInWithEmail_Succeeds() {
         val payload = getValidEmailLoginPayload()
         performLogin(payload)
@@ -305,10 +303,72 @@ class UserUATests : AbstractContainerDatabaseTest() {
             "  \"password\": \"mytopsecret\"\n" +
             "}"
 
-
-    @EventListener
-    fun userRegistrationListener(event: UserRegisteredEvent) {
-        this.token = event.token
+    @Test
+    @Order(20)
+    fun resetPassword_StartPasswordResetWithUnknownUser_ReturnsOK() {
+        val payload = "{ \"login\": \"deltest\"}"
+        sut.post("/api/user/reset/init") {
+            content = payload
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk }
+        }
     }
+
+    @Test
+    @Order(21)
+    fun resetPassword_StartPasswordResetWithkKnownUser_PublishesEventAndReturnsOK() {
+        val resetStoreSize = tokenStore.resetStore.size
+        val payload = "{ \"login\": \"test\"}"
+        sut.post("/api/user/reset/init") {
+            content = payload
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk }
+        }
+        assertThat(tokenStore.resetStore.size).isEqualTo(resetStoreSize + 1)
+    }
+
+    @Test
+    @Order(25)
+    fun resetPassword_finishResetWithWrongToken_DoesNotUpdateAnyPasswordsAndReturnsOk() {
+        val oldPasswords = getAllHashedPasswords()
+        val payload = "{ \"password\": \"newsecret\"}"
+        val token = UUID.randomUUID().toString()
+        sut.post("/api/user/reset/finish/$token") {
+            content = payload
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk }
+        }
+        val newPasswords = getAllHashedPasswords()
+        assertThat(newPasswords).containsAll(oldPasswords)
+        assertThat(newPasswords.size).isEqualTo(oldPasswords.size)
+    }
+
+    private fun getAllHashedPasswords() = userRepo.findAll().mapNotNull { u -> u.password }
+
+    @Test
+    @Order(26)
+    fun resetPassword_finishResetWithCorrectToken_DoesUpdatePasswordAndReturnsOk() {
+        val oldPasswords = getAllHashedPasswords()
+        val uid = getUidForLogin("test")
+        val oldUserPassword = userRepo.findById(uid).orElse(null)?.password ?: ""
+        val unaffectedPasswords = oldPasswords.filter { pw -> pw != oldUserPassword }
+        val payload = "{ \"password\": \"newsecret\"}"
+        val token = tokenStore.resetStore[uid]
+        sut.post("/api/user/reset/finish/$token") {
+            content = payload
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk }
+        }
+        val newPasswords = getAllHashedPasswords()
+        val newUserPassword = userRepo.findById(uid).orElse(null)?.password ?: ""
+        assertThat(newPasswords).containsAll(unaffectedPasswords)
+        assertThat(newPasswords.size).isEqualTo(oldPasswords.size)
+        assertThat(newUserPassword).isNotEqualTo(oldUserPassword)
+    }
+
 
 }

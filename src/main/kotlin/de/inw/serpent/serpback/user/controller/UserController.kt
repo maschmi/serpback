@@ -56,6 +56,19 @@ class UserController(val userRegistrationService: UserRegistrationService,
         return ResponseEntity.ok().body(loginResult.getOrNull<UserLoginResponse>())
     }
 
+    @PostMapping("/reset/init")
+    fun passwordResetInit(@Valid @RequestBody request: UserPasswordResetInitRequest): ResponseEntity<Nothing> {
+        userManagementService.passwordResetInit(request.login)
+        return ResponseEntity.ok().build()
+    }
+
+    @PostMapping("/reset/finish/{token}")
+    fun passwordResetFinish(@PathVariable token: String,
+        @Valid @RequestBody request: UserPasswordResetFinishRequest): ResponseEntity<Nothing> {
+        userManagementService.finishResetPassword(token, request.password)
+        return ResponseEntity.ok().build()
+    }
+
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/delete/{login}")
     fun deleteUser(@PathVariable login: String): ResponseEntity<Nothing> {

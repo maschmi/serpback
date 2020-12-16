@@ -28,7 +28,7 @@ class UserManagementService(private val userRepository: UserRepository,
     private val RESET_EXPIRATION_IN_MIN = 120
     private val log = LoggerFactory.getLogger(UserManagementService::class.java)
 
-    fun startResetPassword(username: String) {
+    fun passwordResetInit(username: String) {
         val userEntity = getUserEntityByLoginOrMail(username) ?: return
         deleteExistingResetToken(userEntity.login ?: "")
         createResetToken(userEntity)
@@ -46,14 +46,13 @@ class UserManagementService(private val userRepository: UserRepository,
         }
     }
 
-    fun finishResetPassword(token: String, password: String): Boolean {
+    fun finishResetPassword(token: String, password: String) {
         val user = resetTokenRepository
             .findByToken(token)?.user
-            ?: return false
+            ?: return
         user.password = passwordEncoder.encode(password)
         userRepository.save(user)
         resetTokenRepository.deleteByToken(token)
-        return true
     }
 
     fun tryDeleteUser(username: String): Boolean {
@@ -73,7 +72,7 @@ class UserManagementService(private val userRepository: UserRepository,
             authorities.mapNotNull { a -> userAuthoritiesRepository.findByAuthority(a) }
         )
         val savedUser = userRepository.save(userEntity)
-        startResetPassword(user.login)
+        passwordResetInit(user.login)
         return savedUser.mapToDto()
     }
 
