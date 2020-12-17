@@ -15,12 +15,6 @@ import javax.persistence.*
 ])
 class User(
 
-    @Column(nullable = false, unique = false, name = "first_name")
-    var firstName: String? = null,
-
-    @Column(nullable = false, unique = false, name = "last_name")
-    var lastName: String? = null,
-
     @Column(nullable = false, unique = true)
     var login: String? = null,
 

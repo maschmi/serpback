@@ -11,8 +11,6 @@ fun AccountInput.mapToEntity(passwordEncoder: PasswordEncoder,
                              authorities: List<UserAuthorities> = ArrayList()
 ) : User {
     return User(
-        this.firstName,
-        this.lastName,
         this.login,
         this.email,
         passwordEncoder.encode(this.password),
@@ -23,8 +21,6 @@ fun AccountInput.mapToEntity(passwordEncoder: PasswordEncoder,
 
 fun User.mapToUserCreatedResponse(): UserCreatedResponse {
     return UserCreatedResponse(
-        this.firstName ?: "",
-        this.lastName ?: "",
         this.email ?: "",
         this.login ?: "",
         this.authorities.mapNotNull { a -> a.authority }

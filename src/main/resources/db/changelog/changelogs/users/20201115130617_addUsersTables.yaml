@@ -68,16 +68,6 @@ databaseChangeLog:
         - column:
             constraints:
               nullable: false
-            name: first_name
-            type: VARCHAR(255)
-        - column:
-            constraints:
-              nullable: false
-            name: last_name
-            type: VARCHAR(255)
-        - column:
-            constraints:
-              nullable: false
             name: email
             type: VARCHAR(255)
         tableName: users

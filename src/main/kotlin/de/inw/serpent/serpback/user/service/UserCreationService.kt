@@ -45,8 +45,6 @@ class UserCreationService(private val userRepository: UserRepository,
         }
 
         val userEntity = User(
-            user.firstName,
-            user.lastName,
             user.login,
             user.email,
             passwordEncoder.encode(UUID.randomUUID().toString()),
@@ -77,7 +75,7 @@ class UserCreationService(private val userRepository: UserRepository,
 
     fun registerUser(account: AccountInput): ErrorResult<UserCreatedResponse, UserServiceError> {
         log.debug("Registering new user {}.", account.login)
-        validateAccountValues(account)
+        validateRegistrationValues(account)
 
         if (userRepository.findByLogin(account.login) != null) {
             return ErrorResult.failure(UserServiceError.LOGIN_ALREADY_REGISTERED)
@@ -137,7 +135,7 @@ class UserCreationService(private val userRepository: UserRepository,
         userRepository.save(user)
     }
 
-    private fun validateAccountValues(account: AccountInput) {
+    private fun validateRegistrationValues(account: AccountInput) {
         val invalidFields = ArrayList<String>()
         if (account.email.isBlank()) {
             invalidFields.add("email")

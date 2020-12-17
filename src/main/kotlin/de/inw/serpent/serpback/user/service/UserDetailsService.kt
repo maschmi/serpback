@@ -18,7 +18,7 @@ class UserDetailsService(val userRepository: UserRepository)
         }
         val user = userRepository.findByLogin(username)
             ?: throw UsernameNotFoundException(username)
-        if (!(user.enabled ?: false)) {
+        if (user.enabled != true) {
             throw UserNotEnabledException(username)
         }
         return UserPrincipal(user)

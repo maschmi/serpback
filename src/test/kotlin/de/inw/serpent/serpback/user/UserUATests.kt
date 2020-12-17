@@ -59,8 +59,6 @@ class UserUATests : AbstractContainerDatabaseTest() {
     @Order(2)
     fun registerNewUser_WithEmptyObject_Returns400AndAllInvalidFields() {
         val payload = "{\n" +
-                "            \"firstName\":  \"\",\n" +
-                "            \"lastName\":  \"\",\n" +
                 "            \"password\":  \"\",\n" +
                 "            \"email\":  \"\",\n" +
                 "            \"login\": \"\"\n" +
@@ -82,15 +80,11 @@ class UserUATests : AbstractContainerDatabaseTest() {
     @Order(3)
     fun registerNewUser_WithValidData_ReturnsUserDtoAndSendsEventWithRegistrationToken() {
         val payload = "{\n" +
-                "            \"firstName\":  \"fn\",\n" +
-                "            \"lastName\":  \"ln\",\n" +
                 "            \"password\":  \"mytopsecret\",\n" +
                 "            \"email\":  \"test@test\",\n" +
                 "            \"login\": \"test\"\n" +
                 "        }"
         val expectedResult = "{\n" +
-                "            \"firstName\":  \"fn\",\n" +
-                "            \"lastName\":  \"ln\",\n" +
                 "            \"email\":  \"test@test\",\n" +
                 "            \"login\": \"test\"\n" +
                 "        }"
@@ -247,8 +241,6 @@ class UserUATests : AbstractContainerDatabaseTest() {
     fun deleteUser_WhenUserIsAdmin_ReturnsNoContentAndDeletesUser() {
         val userLogin = "deltest"
         val newUserToRegister = "{\n" +
-                "            \"firstName\":  \"fn\",\n" +
-                "            \"lastName\":  \"ln\",\n" +
                 "            \"password\":  \"mytopsecret\",\n" +
                 "            \"email\":  \"test1@test1\",\n" +
                 "            \"login\": \"$userLogin\"\n" +
