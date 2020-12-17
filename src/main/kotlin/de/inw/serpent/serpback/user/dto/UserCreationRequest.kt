@@ -5,6 +5,5 @@ import javax.validation.constraints.NotBlank
 
 data class UserCreationRequest(@Email val email: String,
                                @NotBlank val login: String,
-                               val roles: List<String>) {
-
+                               val authorities: List<String>?) {
 }

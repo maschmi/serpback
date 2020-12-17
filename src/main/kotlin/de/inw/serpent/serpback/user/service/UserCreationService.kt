@@ -9,7 +9,7 @@ import de.inw.serpent.serpback.user.domain.RegistrationToken
 import de.inw.serpent.serpback.user.domain.User
 import de.inw.serpent.serpback.user.domain.mapToUserCreatedResponse
 import de.inw.serpent.serpback.user.domain.mapToEntity
-import de.inw.serpent.serpback.user.dto.AccountInput
+import de.inw.serpent.serpback.user.dto.UserRegistrationRequest
 import de.inw.serpent.serpback.user.dto.UserCreatedResponse
 import de.inw.serpent.serpback.user.dto.UserCreationRequest
 import de.inw.serpent.serpback.user.events.UserRegisteredEvent
@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.*
 import javax.transaction.Transactional
+import kotlin.collections.ArrayList
 
 @Service
 @Transactional
@@ -49,7 +50,7 @@ class UserCreationService(private val userRepository: UserRepository,
             user.email,
             passwordEncoder.encode(UUID.randomUUID().toString()),
             true,
-            user.roles.mapNotNull { a -> userAuthoritiesRepository.findByAuthority(a) }
+            user.authorities?.mapNotNull { a -> userAuthoritiesRepository.findByAuthority(a) } ?: ArrayList()
         )
         val savedUser = userRepository.save(userEntity)
         userManagementService.passwordResetInit(user.login)
@@ -73,7 +74,7 @@ class UserCreationService(private val userRepository: UserRepository,
         throw InvalidUserRegistrationException(invalidFields)
     }
 
-    fun registerUser(account: AccountInput): ErrorResult<UserCreatedResponse, UserServiceError> {
+    fun registerUser(account: UserRegistrationRequest): ErrorResult<UserCreatedResponse, UserServiceError> {
         log.debug("Registering new user {}.", account.login)
         validateRegistrationValues(account)
 
@@ -135,7 +136,7 @@ class UserCreationService(private val userRepository: UserRepository,
         userRepository.save(user)
     }
 
-    private fun validateRegistrationValues(account: AccountInput) {
+    private fun validateRegistrationValues(account: UserRegistrationRequest) {
         val invalidFields = ArrayList<String>()
         if (account.email.isBlank()) {
             invalidFields.add("email")

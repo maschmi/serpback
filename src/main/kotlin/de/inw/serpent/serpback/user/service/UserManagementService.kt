@@ -1,14 +1,9 @@
 package de.inw.serpent.serpback.user.service
 
 import de.inw.serpent.serpback.user.PasswordResetTokenRepository
-import de.inw.serpent.serpback.user.UserAuthoritiesRepository
 import de.inw.serpent.serpback.user.UserRepository
 import de.inw.serpent.serpback.user.domain.PasswordResetToken
 import de.inw.serpent.serpback.user.domain.User
-import de.inw.serpent.serpback.user.domain.mapToUserCreatedResponse
-import de.inw.serpent.serpback.user.dto.UserCreatedResponse
-import de.inw.serpent.serpback.user.dto.UserCreationRequest
-import de.inw.serpent.serpback.user.dto.UserRegistrationRequest
 import de.inw.serpent.serpback.user.events.PasswordResetEvent
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
@@ -33,6 +28,7 @@ class UserManagementService(private val userRepository: UserRepository,
         val userEntity = getUserEntityByLoginOrMail(username) ?: return
         deleteExistingResetToken(userEntity.login ?: "")
         createResetToken(userEntity)
+        log.debug("Password reset for uid ${userEntity.id} initiated.")
     }
 
     private fun getUserEntityByLoginOrMail(username: String): User? {
@@ -41,8 +37,10 @@ class UserManagementService(private val userRepository: UserRepository,
     }
 
     private fun deleteExistingResetToken(login: String) {
+
         val existingToken = resetTokenRepository.findByLogin(login)
         if (existingToken != null) {
+            log.debug("Deleting existing reset token ${existingToken.token} for user login $login")
             resetTokenRepository.delete(existingToken)
         }
     }
@@ -54,6 +52,7 @@ class UserManagementService(private val userRepository: UserRepository,
         user.password = passwordEncoder.encode(password)
         userRepository.save(user)
         resetTokenRepository.deleteByToken(token)
+        log.debug("Password reset for with token $token for uid ${user.id} finished")
     }
 
     fun tryDeleteUser(username: String): Boolean {
@@ -74,9 +73,11 @@ class UserManagementService(private val userRepository: UserRepository,
 
     @Scheduled(cron = "0 0 * * * *")
     protected fun removeStaleResetTokens() {
-        resetTokenRepository
+        val staleRestTokens = resetTokenRepository
             .findAll()
             .filter { token ->  !isResetTokenValid(token)}
+        log.debug("Removing stale reset tokens {}", staleRestTokens.map { t -> "$t.token, $t.expirationDate }" })
+        staleRestTokens
             .forEach { token -> resetTokenRepository.delete(token) }
     }
 

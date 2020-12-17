@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
@@ -44,6 +45,9 @@ class UserUATests : AbstractContainerDatabaseTest() {
 
     @Autowired
     private lateinit var userAuthoritiesRepo: UserAuthoritiesRepository
+
+    @Autowired
+    private lateinit var passwordEncode: PasswordEncoder
 
     private var token: String = ""
 
@@ -180,8 +184,8 @@ class UserUATests : AbstractContainerDatabaseTest() {
            }
     }
 
-    private fun extractCookiesFromLoginResponse(): Array<out Cookie> {
-        val loginResult = performLogin(getValidLoginPayload()).andReturn()
+    private fun extractCookiesFromLoginResponse(payload: String? = null): Array<out Cookie> {
+        val loginResult = performLogin(payload ?: getValidLoginPayload()).andReturn()
         return  loginResult.response.cookies
     }
 
@@ -263,7 +267,7 @@ class UserUATests : AbstractContainerDatabaseTest() {
 
     @Test
     @Order(13)
-    fun userLogout_userLogsOut_ReturnsOk_AndEchoServiceIsNoLongerAccessible() {
+            fun userLogout_userLogsOut_ReturnsOkAndEchoServiceIsNoLongerAccessible() {
         val expectedBody = UUID.randomUUID().toString()
 
         sut.get("/api/user/logout")
@@ -290,6 +294,34 @@ class UserUATests : AbstractContainerDatabaseTest() {
             }
     }
 
+    @Test
+    @Order(15)
+    fun userLogin_adminUserLogsInAndHasRole_ReturnsUsernameAndRoleList() {
+        val payload = getValidEmailLoginPayload()
+        performLogin(payload)
+            .andExpect {
+                status { isOk  }
+                content { contentType(MediaType.APPLICATION_JSON)}
+                jsonPath("$.login", `is`("test") )
+                jsonPath("$.authorities") { isArray }
+                jsonPath("$.authorities", hasItem("ROLE_ADMIN"))
+            }
+    }
+
+    @Test
+    @Order(15)
+    fun userDetails_() {
+        val payload = getValidEmailLoginPayload()
+        performLogin(payload)
+            .andExpect {
+                status { isOk  }
+                content { contentType(MediaType.APPLICATION_JSON)}
+                jsonPath("$.login", `is`("test") )
+                jsonPath("$.authorities") { isArray }
+                jsonPath("$.authorities", hasItem("ROLE_ADMIN"))
+            }
+    }
+
     private fun getValidEmailLoginPayload() = "{\n" +
             "  \"username\": \"test@test\",\n" +
             "  \"password\": \"mytopsecret\"\n" +
@@ -309,7 +341,7 @@ class UserUATests : AbstractContainerDatabaseTest() {
 
     @Test
     @Order(21)
-    fun resetPassword_StartPasswordResetWithkKnownUser_PublishesEventAndReturnsOK() {
+    fun resetPassword_StartPasswordResetWithKnownUser_PublishesEventAndReturnsOK() {
         val resetStoreSize = tokenStore.resetStore.size
         val payload = "{ \"login\": \"test\"}"
         sut.post("/api/user/reset/init") {
@@ -359,8 +391,90 @@ class UserUATests : AbstractContainerDatabaseTest() {
         val newUserPassword = userRepo.findById(uid).orElse(null)?.password ?: ""
         assertThat(newPasswords).containsAll(unaffectedPasswords)
         assertThat(newPasswords.size).isEqualTo(oldPasswords.size)
-        assertThat(newUserPassword).isNotEqualTo(oldUserPassword)
+        assertThat(passwordEncode.matches("newsecret", newUserPassword)).isTrue
     }
+
+    @Test
+    @Order(30)
+    fun createUser_adminUser_CreatesUserWithKnownAndUnknownAuthority_SendsPasswordResetEventForNewUser_ReturnsUserWithoutUnknownAuthority() {
+        val adminLoginPayload = "{\n" +
+                "  \"username\": \"test@test\",\n" +
+                "  \"password\": \"newsecret\"\n" +
+                "}"
+        val cookies = extractCookiesFromLoginResponse(adminLoginPayload)
+        val newUserPayload = "{\n" +
+                "            \"email\":  \"test1@test1\",\n" +
+                "            \"login\": \"test1\",\n" +
+                "            \"authorities\": [\"ROLE_ADMIN\", \"ROLE_USER\"] "+
+                "        }"
+        val expectedResult = "{\n" +
+                "            \"email\":  \"test1@test1\",\n" +
+                "            \"login\": \"test1\",\n" +
+                "            \"authorities\": [\"ROLE_ADMIN\"] "+
+                "        }"
+        sut.post("/api/user/create") {
+            contentType = MediaType.APPLICATION_JSON
+            content = newUserPayload
+            cookie(*cookies)
+        }
+            .andExpect {
+                status { isCreated }
+                content { contentType(MediaType.APPLICATION_JSON)}
+                content { json(expectedResult) }
+            }
+
+        val newUserUid = getUidForLogin("test1")
+        assertThat(tokenStore.resetStore[newUserUid]).isNotNull
+    }
+
+    @Test
+    @Order(31)
+    fun createUser_adminUser_CreatesUserExistingEmail_GetsError() {
+        val adminLoginPayload = "{\n" +
+                "  \"username\": \"test@test\",\n" +
+                "  \"password\": \"newsecret\"\n" +
+                "}"
+        val cookies = extractCookiesFromLoginResponse(adminLoginPayload)
+        val newUserPayload = "{\n" +
+                "            \"email\":  \"test1@test1\",\n" +
+                "            \"login\": \"test2\",\n" +
+                "            \"authorities\": [\"ROLE_ADMIN\", \"ROLE_USER\"] "+
+                "        }"
+        sut.post("/api/user/create") {
+            contentType = MediaType.APPLICATION_JSON
+            content = newUserPayload
+            cookie(*cookies)
+        }
+            .andExpect {
+                status { isBadRequest }
+                contains(UserServiceError.EMAIL_ALREADY_REGISTERED.toString())
+            }
+    }
+
+    @Test
+    @Order(32)
+    fun createUser_adminUser_CreatesUserExistingLogin_GetsError() {
+        val adminLoginPayload = "{\n" +
+                "  \"username\": \"test@test\",\n" +
+                "  \"password\": \"newsecret\"\n" +
+                "}"
+        val cookies = extractCookiesFromLoginResponse(adminLoginPayload)
+        val newUserPayload = "{\n" +
+                "            \"email\":  \"test2@test1\",\n" +
+                "            \"login\": \"test1\",\n" +
+                "            \"authorities\": [\"ROLE_ADMIN\", \"ROLE_USER\"] "+
+                "        }"
+        sut.post("/api/user/create") {
+            contentType = MediaType.APPLICATION_JSON
+            content = newUserPayload
+            cookie(*cookies)
+        }
+            .andExpect {
+                status { isBadRequest }
+                contains(UserServiceError.LOGIN_ALREADY_REGISTERED.toString())
+            }
+    }
+
 
 
 }

@@ -44,7 +44,7 @@ class UserLoginService(
         if (authUser?.isAuthenticated == true) {
             val principal = authUser.principal as UserPrincipal
             SecurityContextHolder.getContext().authentication = authUser
-            return ErrorResult.success(UserLoginResponse(principal.username))
+            return ErrorResult.success(UserLoginResponse(principal.username, principal.authorities.mapNotNull { a -> a.authority }))
         }
 
         return ErrorResult.failure("")

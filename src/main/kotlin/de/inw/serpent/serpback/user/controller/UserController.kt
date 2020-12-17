@@ -32,7 +32,7 @@ class UserController(val userCreationService: UserCreationService,
     }
 
     @PostMapping("/register")
-    fun registerUser(@Valid @RequestBody account: AccountInput): ResponseEntity<UserCreatedResponse> {
+    fun registerUser(@Valid @RequestBody account: UserRegistrationRequest): ResponseEntity<UserCreatedResponse> {
         val newUserResult = userCreationService.registerUser(account)
         return processCreationResult(newUserResult)
     }
@@ -62,7 +62,7 @@ class UserController(val userCreationService: UserCreationService,
 
     @Secured("ROLE_ADMIN")
     @PostMapping("/create")
-    fun createUser(@Valid @RequestBody request: UserCreationRequest): ResponseEntity<UserCreatedResponse> {
+    fun createUser(@RequestBody request: UserCreationRequest): ResponseEntity<UserCreatedResponse> {
         val newUserResult = userCreationService.createUser(request)
         return processCreationResult(newUserResult)
     }
