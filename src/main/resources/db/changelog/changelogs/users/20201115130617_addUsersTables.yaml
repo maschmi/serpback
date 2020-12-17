@@ -1,0 +1,140 @@
+databaseChangeLog:
+- changeSet:
+    id: 1605441979846-1
+    author: martin (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            constraints:
+              nullable: false
+            name: user_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: authority_id
+            type: BIGINT
+        tableName: user_authorites_map
+- changeSet:
+    id: 1605441979846-2
+    author: martin (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: user_authoritiesPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: authority
+            type: VARCHAR(50)
+        tableName: user_authorities
+- changeSet:
+    id: 1605441979846-3
+    author: martin (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: usersPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: enabled
+            type: BOOLEAN
+        - column:
+            constraints:
+              nullable: false
+            name: password
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: login
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: email
+            type: VARCHAR(255)
+        tableName: users
+- changeSet:
+    id: 1605441979846-4
+    author: martin (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: login
+        constraintName: UC_USERS_LOGIN
+        tableName: users
+- changeSet:
+      id: 1605441979846-4-1
+      author: martin (generated)
+      changes:
+      - addUniqueConstraint:
+          columnNames: email
+          constraintName: UC_USERS_EMAIL
+          tableName: users
+- changeSet:
+    id: 1605441979846-5
+    author: martin (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: authority_id
+        baseTableName: user_authorites_map
+        constraintName: FKjy3wexi79alogl9heq5qnyhh2
+        deferrable: false
+        initiallyDeferred: false
+        referencedColumnNames: id
+        referencedTableName: user_authorities
+        validate: true
+        onDelete: 'SET NULL'
+- changeSet:
+    id: 1605441979846-6
+    author: martin (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: user_authorites_map
+        constraintName: FKlai67k13146q8knyu0uepykob
+        deferrable: false
+        initiallyDeferred: false
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+        onDelete: CASCADE
+- changeSet:
+    id: 1605441979846-7
+    author: martin
+    changes:
+    - createIndex:
+        columns:
+        - column:
+           name: login
+        indexName: idx_usr_login
+        tableName: users
+        unique: true
+- changeSet:
+      id: 1605441979846-8
+      author: martin
+      changes:
+      - createIndex:
+          columns:
+          - column:
+             name: email
+          indexName: idx_usr_email
+          tableName: users
+          unique: true
+

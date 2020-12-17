@@ -1,0 +1,22 @@
+spring:
+  profiles:
+    active: dev
+  cache:
+    type: none
+  datasource:
+    url: jdbc:postgresql://localhost:6432/serp
+    username: serpant
+    password: serpent_dev
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/master.yaml
+    contexts: dev, staging
+    url: jdbc:postgresql://localhost:6432/serp
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+  session:
+    store-type: jdbc

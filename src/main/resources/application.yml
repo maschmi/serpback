@@ -1,32 +1,3 @@
 spring:
-  profiles:
-    active: dev
-  datasource:
-    url: jdbc:postgresql://localhost:6432/serp
-    username: serpant
-    password: serpent_dev
-  liquibase:
-    change-log: classpath:db/changelog/master.yaml
-    contexts: dev, staging
-    url: jdbc:postgresql://localhost:6432/serp
-  jpa:
-    hibernate:
-      ddl-auto: none
-      dialect: org.hibernate.dialect.PostgresSQLDialect
-
----
-spring:
-  profiles:
-    active: prod
-  datasource:
-    url: jdbc:postgresql://localhost:6432/serp
-    username: serpant
-    password: serpent_dev
-  liquibase:
-    change-log: classpath:db/changelog/master.yaml
-    contexts: prod
-    url: jdbc:postgresql://localhost:6432/serp
-  jpa:
-    hibernate:
-      ddl-auto: none
-      dialect: org.hibernate.dialect.PostgresSQLDialect
+  application:
+    name: serpback

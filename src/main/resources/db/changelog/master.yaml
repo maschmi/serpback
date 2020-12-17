@@ -1,4 +1,16 @@
 databaseChangeLog:
-  - includeAll:
-      path: changelogs
-      relativeToChangelogFile: true
+  - include:
+     file: 'changelogs/users/20201115130617_addUsersTables.yaml'
+     relativeToChangelogFile: true
+  - include:
+     file: 'changelogs/users/20201127170626_updateUserInfoAndRegistrations.yaml'
+     relativeToChangelogFile: true
+  - include:
+     file: 'changelogs/20201206160250_createSessionTables.yaml'
+     relativeToChangelogFile: true
+  - include:
+     file: 'changelogs/users/20201216094911_updatesConstraints.yaml'
+     relativeToChangelogFile: true
+  - include:
+     file: 'changelogs/users/20201216110024_addsResetPasswordTables.yaml'
+     relativeToChangelogFile: true

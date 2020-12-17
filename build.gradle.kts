@@ -13,6 +13,7 @@ plugins {
 	jacoco
 }
 
+
 group = "de.inw.serpent"
 version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_11
@@ -35,6 +36,7 @@ val liquibaseRuntime by configurations
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -43,8 +45,8 @@ dependencies {
 	implementation("org.ehcache:ehcache")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation("org.liquibase:liquibase-core")
-	implementation("org.springframework.session:spring-session-core")
+	implementation("org.liquibase:liquibase-core:4.1.1")
+	implementation("org.springframework.session:spring-session-jdbc")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
@@ -55,12 +57,15 @@ dependencies {
 	testImplementation("org.testcontainers:postgresql")
 	testImplementation("org.jetbrains.kotlin:kotlin-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+	liquibaseRuntime("org.jetbrains.kotlin:kotlin-reflect")
+	liquibaseRuntime("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	liquibaseRuntime("org.springframework.boot:spring-boot-starter-data-jpa")
-	liquibaseRuntime("org.liquibase.ext:liquibase-hibernate5:3.10.0")
+	liquibaseRuntime("org.liquibase:liquibase-core:4.1.1")
+	liquibaseRuntime("org.liquibase.ext:liquibase-hibernate5:4.1.1")
 	liquibaseRuntime("org.postgresql:postgresql")
 	liquibaseRuntime("ch.qos.logback:logback-core:1.2.3")
 	liquibaseRuntime("ch.qos.logback:logback-classic:1.2.3")
-	liquibaseRuntime("org.yaml:snakeyaml:1.15")
+	liquibaseRuntime("org.yaml:snakeyaml:1.24")
 	liquibaseRuntime(sourceSets["main"].output)
 }
 
@@ -113,19 +118,20 @@ liquibase {
 	activities.register("diff") {
 		this.arguments = mapOf(
 				"driver" to "org.postgresql.Driver",
-				"url" to "jdbc:postgresql://localhost:6432/sep",
-				"referenceUrl" to "hibernate:spring:de.immernurwollen.planets.domain?dialect=org.hibernate.dialect.PostgreSQL95Dialect&hibernate.physical_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy&hibernate.implicit_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy",
+				"url" to "jdbc:postgresql://localhost:6432/serp",
+				"referenceUrl" to "hibernate:spring:de.inw.serpent.serpback?dialect=org.hibernate.dialect.PostgreSQLDialect&hibernate.physical_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy&hibernate.implicit_naming_strategy=org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy",
 				"username" to "serpant",
 				"password" to "serpent_dev",
 				"changeLogFile" to project.extra["diffChangelogFile"],
-				"defaultSchemaName" to "",
-				"logLevel" to "debug"
+				"defaultSchemaName" to "public",
+				"logLevel" to "debug",
+				"classpath" to "$buildDir/classes/kotlin/main"
 		)
 	}
 	activities.register("main") {
 		this.arguments = mapOf(
 				"driver" to "org.postgresql.Driver",
-				"url" to "jdbc:postgresql://localhost:6432/sep",
+				"url" to "jdbc:postgresql://localhost:6432/serp",
 				"username" to "serpant",
 				"password" to "serpent_dev",
 				"changeLogFile" to project.extra["mainChangeLogFile"],

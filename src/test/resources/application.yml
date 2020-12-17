@@ -1,0 +1,31 @@
+
+spring:
+  profiles:
+    active: test
+  cache:
+    type: none
+  datasource:
+    url: jdbc:postgresql://localhost:6432/serp
+    username: testuser
+    password: secret
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/master.yaml
+    contexts: dev, staging
+    url: jdbc:postgresql://localhost:6432/serp
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+  session:
+    store-type: jdbc
+
+featuretoggle:
+  test: enable
+
+logging:
+  level:
+    root: warn
+    de.inw.serpent: debug

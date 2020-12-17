@@ -1,0 +1,59 @@
+databaseChangeLog:
+- changeSet:
+    id: 1606493188515-5
+    author: martin (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: registration_tokensPK
+            name: id
+            type: BIGINT
+        - column:
+            name: expiration_date
+            type: TIMESTAMP WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: token
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: user_id
+            type: BIGINT
+        tableName: registration_tokens
+- changeSet:
+    id: 1606493188515-6
+    author: martin (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: registration_tokens
+        constraintName: FK7jn8fy2kyng47xaetplvg1ssy
+        deferrable: false
+        initiallyDeferred: false
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+        onDelete: CASCADE
+- changeSet:
+    id: 1606493188515-2
+    author: martin (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: email
+        constraintName: UC_USERSEMAIL_COL
+        tableName: users
+- changeSet:
+    id: 1606493188515-4
+    author: martin (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: login
+        constraintName: UC_USERSLOGIN_COL
+        tableName: users
