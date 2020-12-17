@@ -6,6 +6,4 @@ import java.io.Serializable
 class SessionAttributeKey(
     val sessionPrimaryId: SpringSession,
     val attributeName: String
-) : Serializable {
-
-}
+) : Serializable

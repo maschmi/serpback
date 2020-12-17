@@ -7,10 +7,12 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.crypto.password.PasswordEncoder
 
 @Configuration
-class AuthenticationConfig(private val userDetailService: UserDetailsService,
-                           private val pwEncoder: PasswordEncoder) {
+class AuthenticationConfig(
+    private val userDetailService: UserDetailsService,
+    private val pwEncoder: PasswordEncoder
+) {
     @Bean
-    fun authProvider(): DaoAuthenticationProvider  {
+    fun authProvider(): DaoAuthenticationProvider {
         val authProvider = DaoAuthenticationProvider()
         authProvider.setUserDetailsService(userDetailService)
         authProvider.setPasswordEncoder(pwEncoder)

@@ -8,6 +8,7 @@ import de.inw.serpent.serpback.user.domain.UserAuthorities
 import de.inw.serpent.serpback.user.service.UserServiceError
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.*
+import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
@@ -17,10 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.delete
-import org.springframework.test.web.servlet.get
-import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.*
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.lang.AssertionError
@@ -379,12 +377,9 @@ class UserUATests : AbstractContainerDatabaseTest() {
         val uid = getUidForLogin("test")
         val oldUserPassword = userRepo.findById(uid).orElse(null)?.password ?: ""
         val unaffectedPasswords = oldPasswords.filter { pw -> pw != oldUserPassword }
-        val payload = "{ \"password\": \"newsecret\"}"
+        val newPassword = "newsecret"
         val token = tokenStore.resetStore[uid]
-        sut.post("/api/user/reset/finish/$token") {
-            content = payload
-            contentType = MediaType.APPLICATION_JSON
-        }.andExpect {
+        performFinishPasswordReset(token, newPassword).andExpect {
             status { isOk }
         }
         val newPasswords = getAllHashedPasswords()
@@ -394,13 +389,18 @@ class UserUATests : AbstractContainerDatabaseTest() {
         assertThat(passwordEncode.matches("newsecret", newUserPassword)).isTrue
     }
 
+    private fun performFinishPasswordReset(
+        token: String?,
+        password: String
+    ) = sut.post("/api/user/reset/finish/$token") {
+        content = "{ \"password\": \"$password\"}"
+        contentType = MediaType.APPLICATION_JSON
+    }
+
     @Test
     @Order(30)
     fun createUser_adminUser_CreatesUserWithKnownAndUnknownAuthority_SendsPasswordResetEventForNewUser_ReturnsUserWithoutUnknownAuthority() {
-        val adminLoginPayload = "{\n" +
-                "  \"username\": \"test@test\",\n" +
-                "  \"password\": \"newsecret\"\n" +
-                "}"
+        val adminLoginPayload = adminLoginAfterPasswordChange()
         val cookies = extractCookiesFromLoginResponse(adminLoginPayload)
         val newUserPayload = "{\n" +
                 "            \"email\":  \"test1@test1\",\n" +
@@ -424,16 +424,18 @@ class UserUATests : AbstractContainerDatabaseTest() {
             }
 
         val newUserUid = getUidForLogin("test1")
-        assertThat(tokenStore.resetStore[newUserUid]).isNotNull
+
+        val resetToken = tokenStore.resetStore[newUserUid]
+        assertThat(resetToken).isNotNull
+
+        performFinishPasswordReset(resetToken, "test1")
+            .andExpect { status { isOk } }
     }
 
     @Test
     @Order(31)
     fun createUser_adminUser_CreatesUserExistingEmail_GetsError() {
-        val adminLoginPayload = "{\n" +
-                "  \"username\": \"test@test\",\n" +
-                "  \"password\": \"newsecret\"\n" +
-                "}"
+        val adminLoginPayload = adminLoginAfterPasswordChange()
         val cookies = extractCookiesFromLoginResponse(adminLoginPayload)
         val newUserPayload = "{\n" +
                 "            \"email\":  \"test1@test1\",\n" +
@@ -454,10 +456,7 @@ class UserUATests : AbstractContainerDatabaseTest() {
     @Test
     @Order(32)
     fun createUser_adminUser_CreatesUserExistingLogin_GetsError() {
-        val adminLoginPayload = "{\n" +
-                "  \"username\": \"test@test\",\n" +
-                "  \"password\": \"newsecret\"\n" +
-                "}"
+        val adminLoginPayload = adminLoginAfterPasswordChange()
         val cookies = extractCookiesFromLoginResponse(adminLoginPayload)
         val newUserPayload = "{\n" +
                 "            \"email\":  \"test2@test1\",\n" +
@@ -475,6 +474,265 @@ class UserUATests : AbstractContainerDatabaseTest() {
             }
     }
 
+    private fun adminLoginAfterPasswordChange() = "{\n" +
+            "  \"username\": \"test@test\",\n" +
+            "  \"password\": \"newsecret\"\n" +
+            "}"
 
+    @Test
+    @Order(40)
+    fun changeAuthorities_adminUser_ReturnsUserDetailsWithNewAuthorities() {
+        val adminLoginPayload = adminLoginAfterPasswordChange()
+        val cookies = extractCookiesFromLoginResponse(adminLoginPayload)
+        val newAuthorities = "{ \"authorities\": [] }"
+        val userToUpdate = "test1"
+        val expectedResult = "{\n" +
+                "            \"email\":  \"test1@test1\",\n" +
+                "            \"login\": \"test1\",\n" +
+                "            \"authorities\": [] "+
+                "        }"
+        sut.get("/api/user/$userToUpdate") {
+            cookie(*cookies)
+        }
+            .andExpect {
+                status { isOk }
+                jsonPath("$.authorities", hasItem("ROLE_ADMIN"))
+
+            }
+
+        performAuthoritiesUpdate(userToUpdate, newAuthorities, cookies).andExpect {
+            status { isOk }
+            content { contentType(MediaType.APPLICATION_JSON) }
+            content { json(expectedResult) }
+        }
+
+        sut.get("/api/user/$userToUpdate") {
+            cookie(*cookies)
+        }
+            .andExpect {
+                status { isOk }
+                content { json(expectedResult) }
+            }
+    }
+
+    private fun performAuthoritiesUpdate(
+        userToUpdate: String,
+        newAuthorities: String,
+        cookies: Array<out Cookie>
+    ) = sut.put("/api/user/$userToUpdate/authorities") {
+        contentType = MediaType.APPLICATION_JSON
+        content = newAuthorities
+        cookie(*cookies)
+    }
+
+    @Test
+    @Order(41)
+    fun changeAuthorities_nonAdminUser_ReturnsForbidden() {
+        val cookies = extractCookiesFromLoginResponse(nonAdminLoginPayload())
+        val newAuthorities = "{ \"authorities\": [\"ROLE_ADMIN\"] }"
+        val userToUpdate = "test1"
+        performAuthoritiesUpdate(userToUpdate, newAuthorities, cookies)
+            .andExpect { status { isForbidden } }
+    }
+
+    private fun nonAdminLoginPayload() = "{\n" +
+            "  \"username\": \"test1\",\n" +
+            "  \"password\": \"test1\"\n" +
+            "}"
+
+    @Test
+    @Order(50)
+    fun getUser_adminUser_returnsAllUsers() {
+        val adminLoginPayload = adminLoginAfterPasswordChange()
+        val cookies = extractCookiesFromLoginResponse(adminLoginPayload)
+        val expectedResult = "[" +
+                "{\"login\":\"test\",\"email\":\"test@test\",\"authorities\":[\"ROLE_ADMIN\"]}," +
+                "{\"login\":\"test1\",\"email\":\"test1@test1\",\"authorities\":[]}" +
+                "]"
+        sut.get("/api/user") {
+            cookie(*cookies)
+        }.andExpect {
+            status { isOk }
+            content { contentType(MediaType.APPLICATION_JSON) }
+            content { json(expectedResult) }
+        }
+    }
+
+    @Test
+    @Order(51)
+    fun getUser_nonAdminUser_returnsUnauthorized() {
+        val loginPayload = nonAdminLoginPayload()
+        val cookies = extractCookiesFromLoginResponse(loginPayload)
+        sut.get("/api/user") {
+            cookie(*cookies)
+        }.andExpect {
+            status { isForbidden }
+        }
+    }
+
+    @Test
+    @Order(60)
+    fun getSingleUser_nonAdminUserButSelf_returnsDetails() {
+        val loginPayload = nonAdminLoginPayload()
+        val cookies = extractCookiesFromLoginResponse(loginPayload)
+        val expectedResult = "{\n" +
+                "            \"email\":  \"test1@test1\",\n" +
+                "            \"login\": \"test1\",\n" +
+                "            \"authorities\": [] "+
+                "        }"
+        sut.get("/api/user/test1") {
+            cookie(*cookies)
+        }.andExpect {
+            status { isOk }
+            content { contentType(MediaType.APPLICATION_JSON) }
+            content { json(expectedResult) }
+        }
+    }
+
+    @Test
+    @Order(61)
+    fun getSingleUser_nonAdminUserAndNotSelf_returnsForbidden() {
+        val loginPayload = nonAdminLoginPayload()
+        val cookies = extractCookiesFromLoginResponse(loginPayload)
+        sut.get("/api/user/test") {
+            cookie(*cookies)
+        }.andExpect {
+            status { isUnauthorized }
+        }
+    }
+
+    @Test
+    @Order(62)
+    fun getSingleUser_adminUserAndNotSelf_returnsDetails() {
+        val loginPayload = adminLoginAfterPasswordChange()
+        val cookies = extractCookiesFromLoginResponse(loginPayload)
+        val expectedResult = "{\n" +
+                "            \"email\":  \"test1@test1\",\n" +
+                "            \"login\": \"test1\",\n" +
+                "            \"authorities\": [] "+
+                "        }"
+        sut.get("/api/user/test1") {
+            cookie(*cookies)
+        }.andExpect {
+            status { isOk }
+            content { contentType(MediaType.APPLICATION_JSON) }
+            content { json(expectedResult) }
+        }
+    }
+
+
+    @Test
+    @Order(70)
+    fun updateUser_adminUserAndNotSelf_returnsDetailsWithUpdatedAuthorities() {
+        val loginPayload = adminLoginAfterPasswordChange()
+        val cookies = extractCookiesFromLoginResponse(loginPayload)
+        val expectedResult = "{\n" +
+                "            \"email\":  \"test1@test1\",\n" +
+                "            \"login\": \"test1\",\n" +
+                "            \"authorities\": [\"ROLE_ADMIN\"] "+
+                "        }"
+        val userToUpdate = "test1"
+        performUpdateUserPut(userToUpdate, expectedResult, cookies)
+            .andExpect {
+                status { isOk }
+                content { contentType(MediaType.APPLICATION_JSON) }
+                content { json(expectedResult) }
+            }
+
+        performAuthoritiesUpdate(userToUpdate, "{ \"authorities\": [] }", cookies)
+    }
+
+    private fun performUpdateUserPut(
+        userToUpdate: String,
+        expectedResult: String,
+        cookies: Array<out Cookie>
+    ): ResultActionsDsl {
+        return sut.put("/api/user/$userToUpdate") {
+            contentType = MediaType.APPLICATION_JSON
+            content = expectedResult
+            cookie(*cookies)
+        }
+    }
+
+    @Test
+    @Order(71)
+    fun updateUser_adminUserAndSelfUpdatesToExistingLogin_ReturnsError() {
+            val loginPayload = adminLoginAfterPasswordChange()
+            val cookies = extractCookiesFromLoginResponse(loginPayload)
+            val expectedResult = "{\n" +
+                    "            \"email\":  \"test1@test1\",\n" +
+                    "            \"login\": \"test\",\n" +
+                    "            \"authorities\": [\"ROLE_ADMIN\"] "+
+                    "        }"
+            val userToUpdate = "test1"
+
+            performUpdateUserPut(userToUpdate, expectedResult, cookies)
+                .andExpect {
+                    status { isBadRequest }
+                    contains(UserServiceError.LOGIN_ALREADY_REGISTERED.toString())
+                }
+    }
+
+    @Test
+    @Order(72)
+    fun updateUser_adminUserAndSelfUpdatesToExistingEmail_ReturnsError() {
+        val loginPayload = adminLoginAfterPasswordChange()
+        val cookies = extractCookiesFromLoginResponse(loginPayload)
+        val expectedResult = "{\n" +
+                "            \"email\":  \"test@test\",\n" +
+                "            \"login\": \"test1\",\n" +
+                "            \"authorities\": [\"ROLE_ADMIN\"] "+
+                "        }"
+        val userToUpdate = "test1"
+
+        performUpdateUserPut(userToUpdate, expectedResult, cookies)
+            .andExpect {
+                status { isBadRequest }
+                contains(UserServiceError.EMAIL_ALREADY_REGISTERED.toString())
+            }
+    }
+
+    @Test
+    @Order(73)
+    fun updateUser_nonAdminUserAndNotSelf_returnsUnauthorized() {
+        val loginPayload = nonAdminLoginPayload()
+        val cookies = extractCookiesFromLoginResponse(loginPayload)
+        val expectedResult = "{\n" +
+                "            \"email\":  \"test@test\",\n" +
+                "            \"login\": \"test\",\n" +
+                "            \"authorities\": [] "+
+                "        }"
+        val userToUpdate = "test"
+
+        performUpdateUserPut(userToUpdate, expectedResult, cookies)
+            .andExpect {
+                status { isUnauthorized }
+            }
+    }
+
+    @Test
+    @Order(74)
+    fun updateUser_nonAdminUserAndSelf_returnsNewDetailsWithUnchangedAuthorities() {
+        val loginPayload = nonAdminLoginPayload()
+        val cookies = extractCookiesFromLoginResponse(loginPayload)
+        val updatePayload= "{\n" +
+                "            \"email\":  \"test1@test1\",\n" +
+                "            \"login\": \"test3\",\n" +
+                "            \"authorities\": [\"ROLE_ADMIN\"] "+
+                "        }"
+        val expectedResult = "{\n" +
+                "            \"email\":  \"test1@test1\",\n" +
+                "            \"login\": \"test3\",\n" +
+                "            \"authorities\": [] "+
+                "        }"
+        val userToUpdate = "test1"
+
+        performUpdateUserPut(userToUpdate, updatePayload, cookies)
+            .andExpect {
+                status { isOk }
+                content { contentType(MediaType.APPLICATION_JSON) }
+                content { json(expectedResult) }
+            }
+    }
 
 }

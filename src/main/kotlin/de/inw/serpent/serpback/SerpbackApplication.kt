@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class SerpbackApplication
 
 fun main(args: Array<String>) {
-	runApplication<SerpbackApplication>(*args)
+    runApplication<SerpbackApplication>(*args)
 }

@@ -3,8 +3,8 @@ package de.inw.serpent.serpback.user.dto
 import javax.validation.constraints.Email
 import javax.validation.constraints.NotBlank
 
-data class UserCreationRequest(
-    @Email val email: String,
+data class UserUpdateRequest(
     @NotBlank val login: String,
+    @Email val email: String,
     val authorities: List<String>?
 )

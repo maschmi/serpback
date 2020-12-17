@@ -1,7 +1,5 @@
 package de.inw.serpent.serpback.user.domain
 
-import org.hibernate.annotations.OnDelete
-import org.hibernate.annotations.OnDeleteAction
 import org.hibernate.annotations.Type
 import java.io.Serializable
 import javax.persistence.*
@@ -25,6 +23,4 @@ class SpringSessionAttribute(
     @Column(name = "ATTRIBUTE_BYTES", nullable = false)
     val attributeBytes: Array<Byte>
 
-) : Serializable {
-
-}
+) : Serializable

@@ -4,15 +4,15 @@ import de.inw.serpent.serpback.type.ErrorResult
 import de.inw.serpent.serpback.user.RegistrationTokenRepository
 import de.inw.serpent.serpback.user.UserAuthoritiesRepository
 import de.inw.serpent.serpback.user.UserRepository
-import de.inw.serpent.serpback.user.service.exception.InvalidUserRegistrationException
 import de.inw.serpent.serpback.user.domain.RegistrationToken
 import de.inw.serpent.serpback.user.domain.User
-import de.inw.serpent.serpback.user.domain.mapToUserCreatedResponse
 import de.inw.serpent.serpback.user.domain.mapToEntity
-import de.inw.serpent.serpback.user.dto.UserRegistrationRequest
+import de.inw.serpent.serpback.user.domain.mapToUserCreatedResponse
 import de.inw.serpent.serpback.user.dto.UserCreatedResponse
 import de.inw.serpent.serpback.user.dto.UserCreationRequest
+import de.inw.serpent.serpback.user.dto.UserRegistrationRequest
 import de.inw.serpent.serpback.user.events.UserRegisteredEvent
+import de.inw.serpent.serpback.user.service.exception.InvalidUserRegistrationException
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.scheduling.annotation.Scheduled
@@ -24,14 +24,16 @@ import kotlin.collections.ArrayList
 
 @Service
 @Transactional
-class UserCreationService(private val userRepository: UserRepository,
-                          private val registrationTokenRepository: RegistrationTokenRepository,
-                          private val userAuthoritiesRepository: UserAuthoritiesRepository,
-                          private val userManagementService: UserManagementService,
-                          private val passwordEncoder: PasswordEncoder,
-                          private val eventPublisher: ApplicationEventPublisher) {
+class UserCreationService(
+    private val userRepository: UserRepository,
+    private val registrationTokenRepository: RegistrationTokenRepository,
+    private val userAuthoritiesRepository: UserAuthoritiesRepository,
+    private val userManagementService: UserManagementService,
+    private val passwordEncoder: PasswordEncoder,
+    private val eventPublisher: ApplicationEventPublisher
+) {
 
-    private val REGISTRATION_EXPIRATION_IN_MIN = 60*24
+    private val REGISTRATION_EXPIRATION_IN_MIN = 60 * 24
     private val log = LoggerFactory.getLogger(UserCreationService::class.java)
 
     fun createUser(user: UserCreationRequest): ErrorResult<UserCreatedResponse, UserServiceError> {
@@ -106,7 +108,7 @@ class UserCreationService(private val userRepository: UserRepository,
     protected fun removeStaleRegistrationTokens() {
         registrationTokenRepository
             .findAll()
-            .filter { registrationToken ->  !isRegistrationTokenValid(registrationToken)}
+            .filter { registrationToken -> !isRegistrationTokenValid(registrationToken) }
             .forEach { token -> registrationTokenRepository.delete(token) }
     }
 
@@ -119,7 +121,7 @@ class UserCreationService(private val userRepository: UserRepository,
     fun confirmRegistration(token: String): ErrorResult<Boolean, UserServiceError> {
         val registrationToken = registrationTokenRepository.findByToken(token)
             ?: return ErrorResult(UserServiceError.USER_ALREADY_CONFIRMED, false)
-        if(isRegistrationTokenValid(registrationToken)) {
+        if (isRegistrationTokenValid(registrationToken)) {
             activateUser(registrationToken.user)
             registrationTokenRepository.delete(registrationToken)
             return ErrorResult(true, true)

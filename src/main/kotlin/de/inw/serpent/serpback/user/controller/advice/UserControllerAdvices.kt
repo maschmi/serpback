@@ -2,10 +2,11 @@ package de.inw.serpent.serpback.user.controller.advice
 
 import de.inw.serpent.serpback.user.controller.UserBadCredentialsException
 import de.inw.serpent.serpback.user.controller.UserControllerError
-import de.inw.serpent.serpback.user.service.exception.InvalidUserRegistrationException
 import de.inw.serpent.serpback.user.controller.exception.UserConfirmationException
 import de.inw.serpent.serpback.user.controller.exception.UserRegistrationException
+import de.inw.serpent.serpback.user.controller.exception.UserUpdateException
 import de.inw.serpent.serpback.user.service.UserServiceError
+import de.inw.serpent.serpback.user.service.exception.InvalidUserRegistrationException
 import de.inw.serpent.serpback.user.service.exception.UserNotEnabledException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -29,6 +30,14 @@ class UserControllerAdvices {
         }
     }
 
+    @ExceptionHandler()
+    fun userUpdateException(exception: UserUpdateException): ResponseEntity<String> {
+        return when (exception.reason) {
+            UserServiceError.EMAIL_ALREADY_REGISTERED -> ResponseEntity.badRequest().body(exception.reason.toString())
+            UserServiceError.LOGIN_ALREADY_REGISTERED -> ResponseEntity.badRequest().body(exception.reason.toString())
+            else -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.reason.toString())
+        }
+    }
 
     @ExceptionHandler()
     fun userNotConfirmed(exception: UserConfirmationException): ResponseEntity<String> {
@@ -49,11 +58,11 @@ class UserControllerAdvices {
     @ExceptionHandler()
     fun invalidUserRegistration(exception: InvalidUserRegistrationException): ResponseEntity<String> {
         val headers = HttpHeaders()
-        headers.add("errorcode", UserControllerError.INVALID_DATA.toString() )
+        headers.add("errorcode", UserControllerError.INVALID_DATA.toString())
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .headers(headers)
             .contentType(MediaType.APPLICATION_JSON)
-            .body("{ \"invalidfields\": ["+ exception.invalidFields.joinToString(",") +"]}")
+            .body("{ \"invalidfields\": [" + exception.invalidFields.joinToString(",") + "]}")
     }
 
     @ExceptionHandler()
@@ -67,7 +76,7 @@ class UserControllerAdvices {
     }
 
     @ExceptionHandler()
-    fun userNotActivated(exception: UserBadCredentialsException): ResponseEntity<String> {
+    fun badCredentials(exception: UserBadCredentialsException): ResponseEntity<String> {
         val headers = HttpHeaders()
         headers.add("errorcode", UserControllerError.USER_BAD_CREDENTIALS.toString())
         headers.add("details", exception.username)

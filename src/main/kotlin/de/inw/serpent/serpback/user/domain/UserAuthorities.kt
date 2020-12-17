@@ -13,8 +13,8 @@ class UserAuthorities(
     @ManyToMany
     @JoinTable(
         name = "user_authorites_map",
-        inverseJoinColumns = [ JoinColumn(name = "user_id", referencedColumnName = "id") ],
-        joinColumns = [ JoinColumn(name = "authority_id", referencedColumnName = "id")]
+        inverseJoinColumns = [JoinColumn(name = "user_id", referencedColumnName = "id")],
+        joinColumns = [JoinColumn(name = "authority_id", referencedColumnName = "id")]
     )
     var users: Set<User>
 

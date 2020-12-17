@@ -3,8 +3,6 @@ package de.inw.serpent.serpback.user.service
 import de.inw.serpent.serpback.type.ErrorResult
 import de.inw.serpent.serpback.user.UserRepository
 import de.inw.serpent.serpback.user.controller.UserBadCredentialsException
-import de.inw.serpent.serpback.user.domain.PasswordResetToken
-import de.inw.serpent.serpback.user.domain.RegistrationToken
 import de.inw.serpent.serpback.user.dto.UserLoginResponse
 import de.inw.serpent.serpback.user.dto.UserPrincipal
 import de.inw.serpent.serpback.user.service.exception.UserNotEnabledException
@@ -16,7 +14,6 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
-import java.util.*
 
 @Service
 class UserLoginService(
@@ -44,14 +41,20 @@ class UserLoginService(
         if (authUser?.isAuthenticated == true) {
             val principal = authUser.principal as UserPrincipal
             SecurityContextHolder.getContext().authentication = authUser
-            return ErrorResult.success(UserLoginResponse(principal.username, principal.authorities.mapNotNull { a -> a.authority }))
+            return ErrorResult.success(
+                UserLoginResponse(
+                    principal.username,
+                    principal.authorities.mapNotNull { a -> a.authority })
+            )
         }
 
         return ErrorResult.failure("")
     }
 
-    private fun authenticateUser(authToken: UsernamePasswordAuthenticationToken,
-        username: String): Authentication? {
+    private fun authenticateUser(
+        authToken: UsernamePasswordAuthenticationToken,
+        username: String
+    ): Authentication? {
         try {
             return authManagerBuilder.getObject().authenticate(authToken)
         } catch (ex: BadCredentialsException) {

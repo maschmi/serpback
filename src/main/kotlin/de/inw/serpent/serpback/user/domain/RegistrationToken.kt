@@ -1,15 +1,16 @@
 package de.inw.serpent.serpback.user.domain
 
 import de.inw.serpent.serpback.domain.EntityWithId
-import java.sql.Timestamp
 import java.util.*
 import javax.persistence.*
 
 
 @Entity
-@Table(name = "registration_tokens",
+@Table(
+    name = "registration_tokens",
     indexes = [Index(name = "idx_reg_reset_token", columnList = "token")],
-uniqueConstraints = [UniqueConstraint(name = "uc_reg_reset_token", columnNames = ["token"])])
+    uniqueConstraints = [UniqueConstraint(name = "uc_reg_reset_token", columnNames = ["token"])]
+)
 class RegistrationToken(
 
     @Column(name = "token", nullable = false)

@@ -21,7 +21,7 @@ class UserWebSecurityConfig(
 ) : WebSecurityConfigurerAdapter() {
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
-         http
+        http
             .csrf().disable()
             .authorizeRequests()
             .antMatchers(
@@ -36,7 +36,7 @@ class UserWebSecurityConfig(
             .and()
             .logout()
             .logoutUrl("/api/user/logout")
-            .logoutSuccessHandler(HttpStatusReturningLogoutSuccessHandler (HttpStatus.OK))
+            .logoutSuccessHandler(HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))
             .and()
             .httpBasic().disable()
     }

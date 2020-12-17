@@ -6,9 +6,11 @@ import java.util.*
 import javax.persistence.*
 
 @Entity
-@Table(name = "password_reset_tokens",
+@Table(
+    name = "password_reset_tokens",
     indexes = [Index(name = "idx_pw_reset_token", columnList = "token")],
-    uniqueConstraints = [UniqueConstraint(name = "uc_pw_reset_token", columnNames = ["token"])])
+    uniqueConstraints = [UniqueConstraint(name = "uc_pw_reset_token", columnNames = ["token"])]
+)
 class PasswordResetToken(
 
     @Column(name = "token", nullable = false)
@@ -21,5 +23,3 @@ class PasswordResetToken(
 
     var expirationDate: Date?
 ) : EntityWithId()
-{
-}
