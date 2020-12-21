@@ -11,17 +11,23 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository
+import org.springframework.security.web.csrf.CsrfFilter
+
+
+
 
 @Configuration
 @EnableWebSecurity
 @Order(50)
 class UserWebSecurityConfig(
     private val userDetailsService: UserDetailsService,
-    private val authProvider: DaoAuthenticationProvider
+    private val authProvider: DaoAuthenticationProvider,
 ) : WebSecurityConfigurerAdapter() {
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
         http
+            .cors().and()
             .csrf().disable()
             .authorizeRequests()
             .antMatchers(

@@ -20,3 +20,8 @@ spring:
       ddl-auto: validate
   session:
     store-type: jdbc
+
+application:
+  cors:
+    allowedOrigins:
+      - http://localhost:7778
