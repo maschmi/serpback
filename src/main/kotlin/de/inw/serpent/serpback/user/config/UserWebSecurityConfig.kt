@@ -27,8 +27,6 @@ class UserWebSecurityConfig(
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
         http
-            .cors().and()
-            .csrf().disable()
             .authorizeRequests()
             .antMatchers(
                 "/api/user/login",
